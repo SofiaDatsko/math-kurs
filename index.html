@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>МатемаТика Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header>
+    <div class="logo">
+        <div class="logo-symbol">∑</div>
+        МатемаТика Pro
+    </div>
+    <div class="breadcrumb" id="breadcrumb"></div>
+    <div class="header-right">
+        <div id="user-profile-block" style="display: flex; align-items: center; gap: 14px; margin-right: 10px; font-size: 0.85rem; color: rgba(255,255,255,0.85);">
+            <span id="user-welcome-text"></span>
+            <button id="auth-logout-btn" style="background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; transition: 0.2s;">Вихід ↩</button>
+        </div>
+        <button class="admin-toggle" id="admin-toggle-btn" style="display: none;">⚙ Адмін</button>
+    </div>
+</header>
+
+<div class="view" id="view-home">
+    <div id="home-inner" style="max-width:1100px;margin:0 auto"></div>
+</div>
+
+<div class="view" id="view-course">
+    <div style="max-width:900px;margin:0 auto" id="course-inner"></div>
+</div>
+
+<div class="view" id="view-lesson">
+    <div style="max-width:1160px;margin:0 auto" id="lesson-inner"></div>
+</div>
+
+<div class="view" id="view-admin">
+    <div style="max-width:1100px;margin:0 auto">
+        <div style="margin-bottom:28px">
+            <div class="page-title">Адмін-панель</div>
+            <div class="page-sub">Керуй курсами, темами та тестами</div>
+        </div>
+        <div class="admin-layout">
+            <div class="admin-nav" id="admin-nav"></div>
+            <div id="admin-content"></div>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div id="auth-screen" style="position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px;">
+    <div class="admin-panel" style="max-width:400px; width:100%; text-align:center; box-shadow:var(--shadow-lg); padding:40px 30px;">
+        <div class="logo-symbol" style="width:50px; height:50px; margin:0 auto 16px; font-size:1.5rem; border-radius:12px;">∑</div>
+        <h2 style="font-family:'Syne',sans-serif; font-size:1.6rem; margin-bottom:6px;">МатемаТика Pro</h2>
+        <p style="color:var(--ink3); font-size:.85rem; margin-bottom:32px;">Вхід у систему навчання</p>
+        
+        <button class="btn-primary" style="width:100%; padding:14px; display:flex; align-items:center; justify-content:center; gap:10px; background:#fff; color:var(--ink); border:1.5px solid var(--border2);" id="auth-google-btn">
+            <svg style="width:18px; height:18px;" viewBox="0 0 24 24">
+                <path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.866-3.577-7.866-8s3.536-8 7.866-8c2.46 0 4.105 1.025 5.047 1.926l3.227-3.107C18.416 1.421 15.55 0 12.24 0 5.566 0 0 5.37 0 12s5.566 12 12.24 12c6.96 0 11.57-4.834 11.57-11.79 0-.795-.085-1.4-.195-1.925H12.24z"/>
+            </svg>
+            Увійти через Google
+        </button>
+
+        <div style="margin:24px 0; color:var(--ink3); font-size:0.8rem; position:relative;">
+            <span style="background:var(--surface); padding:0 10px; position:relative; z-index:2;">або для викладача</span>
+            <div style="position:absolute; top:50%; left:0; right:0; height:1px; background:var(--border); z-index:1;"></div>
+        </div>
+
+        <div class="field" style="text-align:left;">
+            <input type="email" id="auth-email" placeholder="Пошта викладача" style="padding:8px 12px; font-size:0.85rem;">
+        </div>
+        <div class="field" style="text-align:left; margin-bottom:14px;">
+            <input type="password" id="auth-password" placeholder="Пароль" style="padding:8px 12px; font-size:0.85rem;">
+        </div>
+        <button class="btn-secondary" style="width:100%; padding:10px; font-size:0.85rem;" id="auth-login-btn">Вхід для викладача →</button>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+
+<script type="module" src="/js/app.js"></script>
+</body>
+</html>

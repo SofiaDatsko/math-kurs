@@ -1,0 +1,1118 @@
+/* ═══════════════════════════════════════════════════════
+   УТИЛІТИ ТА ЗМІННІ (ГЛОБАЛЬНІ НАЛАШТУВАННЯ)
+   ═══════════════════════════════════════════════════════ */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --bg: #f5f3ee;
+    --surface: #ffffff;
+    --card: #fffdf9;
+    --ink: #1a1410;
+    --ink2: #5a5248;
+    --ink3: #9e978f;
+    --accent: #e85d26;
+    --accent2: #2563eb;
+    --green: #16a34a;
+    --gold: #d97706;
+    --border: #e8e2d9;
+    --border2: #d4cdc3;
+    --radius: 14px;
+    --shadow: 0 2px 12px rgba(26, 20, 16, .08);
+    --shadow-lg: 0 8px 40px rgba(26, 20, 16, .14);
+}
+
+body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* ── Загальні класи для тексту сторінок ── */
+.page-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 6px;
+}
+
+.page-sub {
+    color: var(--ink3);
+    font-size: .95rem;
+    margin-bottom: 36px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   HEADER (ШАПКА САЙТУ)
+   ═══════════════════════════════════════════════════════ */
+header {
+    background: var(--ink);
+    color: #fff;
+    padding: 0 32px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+}
+
+.logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: -.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo-symbol {
+    width: 28px;
+    height: 28px;
+    background: var(--accent);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .85rem;
+    font-weight: 900;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.admin-toggle {
+    background: rgba(255, 255, 255, .1);
+    border: 1px solid rgba(255, 255, 255, .15);
+    color: rgba(255, 255, 255, .7);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .8rem;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.admin-toggle:hover, 
+.admin-toggle.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+
+/* ── Хлібні крихти (Навігація) ── */
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .8rem;
+    color: rgba(255, 255, 255, .45);
+}
+
+.bc-sep {
+    opacity: .3;
+}
+
+.bc-item {
+    cursor: pointer;
+    transition: .2s;
+}
+
+.bc-item:hover {
+    color: rgba(255, 255, 255, .8);
+}
+
+.bc-item.current {
+    color: rgba(255, 255, 255, .9);
+    font-weight: 500;
+}
+
+/* ═══════════════════════════════════════════════════════
+   РОУТИНГ ТА АНІМАЦІЇ ЕКРАНІВ
+   ═══════════════════════════════════════════════════════ */
+.view {
+    display: none;
+    animation: fadeIn .25s ease;
+}
+
+.view.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════
+   HOME: СІТКА КУРСІВ (КЛАСІВ)
+   ═══════════════════════════════════════════════════════ */
+#view-home {
+    padding: 48px 40px;
+}
+
+.courses-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.course-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: .22s;
+    position: relative;
+}
+
+.course-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    box-shadow: var(--shadow-lg);
+}
+
+.cc-banner {
+    height: 140px;
+    display: flex;
+    align-items: flex-end;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.cc-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: .12;
+}
+
+.cc-grade-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 3.5rem;
+    font-weight: 800;
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: .15;
+    letter-spacing: -2px;
+}
+
+.cc-body {
+    padding: 20px 22px 22px;
+}
+
+.cc-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: -.3px;
+}
+
+.cc-meta {
+    display: flex;
+    gap: 14px;
+    font-size: .78rem;
+    color: var(--ink3);
+    margin-bottom: 14px;
+}
+
+.cc-progress {
+    height: 5px;
+    background: var(--border);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.cc-progress-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: .5s;
+}
+
+.cc-prog-text {
+    font-size: .76rem;
+    color: var(--ink3);
+    display: flex;
+    justify-content: space-between;
+}
+
+/* ── Кольорові теми оформлення карток курсу ── */
+.cc-c0 .cc-banner { background: linear-gradient(135deg, #fef3c7, #fde68a); }
+.cc-c0 .cc-progress-fill { background: var(--gold); }
+
+.cc-c1 .cc-banner { background: linear-gradient(135deg, #dbeafe, #bfdbfe); }
+.cc-c1 .cc-progress-fill { background: var(--accent2); }
+
+.cc-c2 .cc-banner { background: linear-gradient(135deg, #dcfce7, #bbf7d0); }
+.cc-c2 .cc-progress-fill { background: var(--green); }
+
+.cc-c3 .cc-banner { background: linear-gradient(135deg, #fce7f3, #fbcfe8); }
+.cc-c3 .cc-progress-fill { background: #db2777; }
+
+.cc-c4 .cc-banner { background: linear-gradient(135deg, #ffe4e6, #fecdd3); }
+.cc-c4 .cc-progress-fill { background: var(--accent); }
+
+/* ═══════════════════════════════════════════════════════
+   COURSE: СПИСОК ТЕМ КУРСУ
+   ═══════════════════════════════════════════════════════ */
+#view-course {
+    padding: 40px;
+}
+
+.course-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 36px;
+    gap: 20px;
+}
+
+.ch-left h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 800;
+    letter-spacing: -.5px;
+    margin-bottom: 6px;
+}
+
+.ch-left p {
+    color: var(--ink3);
+    font-size: .9rem;
+}
+
+.topics-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.topic-row {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow: hidden;
+    transition: .2s;
+    cursor: pointer;
+    position: relative;
+}
+
+.topic-row:hover:not(.locked) {
+    border-color: var(--accent);
+    box-shadow: var(--shadow);
+}
+
+.topic-row.locked {
+    opacity: .55;
+    cursor: not-allowed;
+    filter: grayscale(.4);
+}
+
+.topic-row.done {
+    border-color: rgba(22, 163, 74, .3);
+}
+
+.tr-num {
+    width: 64px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--ink3);
+    background: var(--bg);
+    border-right: 1.5px solid var(--border);
+    flex-shrink: 0;
+}
+
+.topic-row.done .tr-num {
+    color: var(--green);
+    background: #f0fdf4;
+}
+
+.topic-row.locked .tr-num {
+    color: var(--ink3);
+}
+
+.tr-body {
+    flex: 1;
+    padding: 14px 20px;
+}
+
+.tr-title {
+    font-family: 'Syne', sans-serif;
+    font-size: .95rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.tr-meta {
+    font-size: .78rem;
+    color: var(--ink3);
+    display: flex;
+    gap: 12px;
+}
+
+.tr-right {
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ── Статусні плашки на темах ── */
+.status-chip {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: .72rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.sc-new { background: #fff4ed; color: var(--accent); border: 1px solid #fdba74; }
+.sc-done { background: #f0fdf4; color: var(--green); border: 1px solid #86efac; }
+.sc-lock { background: var(--bg); color: var(--ink3); border: 1px solid var(--border); }
+
+.tr-arrow {
+    color: var(--ink3);
+    font-size: 1.1rem;
+    transition: .2s;
+}
+
+.topic-row:hover:not(.locked) .tr-arrow {
+    color: var(--accent);
+    transform: translateX(3px);
+}
+
+/* ═══════════════════════════════════════════════════════
+   LESSON: СТОРІНКА УРОКУ (ПРЕЗЕНТАЦІЯ, ДЗ, ТЕСТ)
+   ═══════════════════════════════════════════════════════ */
+#view-lesson {
+    padding: 40px;
+}
+
+.lesson-grid {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 28px;
+    max-width: 1160px;
+    margin: 0 auto;
+}
+
+@media (max-width: 900px) {
+    .lesson-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.lesson-section {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 18px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.ls-header {
+    padding: 16px 24px;
+    border-bottom: 1.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ls-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.ls-icon-pres { background: #fff4ed; }
+.ls-icon-hw { background: #fffbeb; }
+.ls-icon-test { background: #eff6ff; }
+
+.ls-title {
+    font-family: 'Syne', sans-serif;
+    font-size: .88rem;
+    font-weight: 700;
+    letter-spacing: .3px;
+    text-transform: uppercase;
+    color: var(--ink2);
+}
+
+.ls-body {
+    padding: 24px;
+}
+
+/* ── Блок Презентації ── */
+.pres-embed {
+    width: 100%;
+    height: 420px;
+    border: none;
+    border-radius: 10px;
+}
+
+.pres-empty {
+    background: var(--bg);
+    border-radius: 12px;
+    padding: 48px 24px;
+    text-align: center;
+    border: 2px dashed var(--border2);
+}
+
+.pres-empty .pe-icon {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    opacity: .4;
+}
+
+.pres-empty p {
+    color: var(--ink3);
+    font-size: .88rem;
+}
+
+/* ── Блок Домашнього Завдання ── */
+.hw-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.hw-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg);
+    border-radius: 10px;
+    font-size: .88rem;
+    line-height: 1.5;
+}
+
+.hw-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+    flex-shrink: 0;
+    margin-top: 6px;
+}
+
+/* ── Інтерактивний Блок Тесту ── */
+.test-questions {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.q-block {
+    background: var(--bg);
+    border-radius: 12px;
+    padding: 18px 20px;
+    border: 1.5px solid transparent;
+    transition: .2s;
+}
+
+.q-text {
+    font-size: .9rem;
+    font-weight: 500;
+    margin-bottom: 14px;
+    line-height: 1.5;
+    color: var(--ink);
+}
+
+.q-opts {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.opt-btn {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    color: var(--ink);
+    padding: 10px 14px;
+    border-radius: 10px;
+    text-align: left;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .85rem;
+    transition: .18s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.opt-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: #fff8f5;
+}
+
+.opt-btn.selected { border-color: var(--accent2); background: #eff6ff; }
+.opt-btn.correct { border-color: var(--green); background: #f0fdf4; color: var(--green); font-weight: 500; }
+.opt-btn.wrong { border-color: #ef4444; background: #fef2f2; color: #dc2626; }
+.opt-btn:disabled { cursor: default; }
+
+.opt-letter {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .72rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-family: 'Syne', sans-serif;
+    transition: .18s;
+}
+
+.opt-btn.selected .opt-letter { border-color: var(--accent2); background: var(--accent2); color: #fff; }
+.opt-btn.correct .opt-letter { border-color: var(--green); background: var(--green); color: #fff; }
+.opt-btn.wrong .opt-letter { border-color: #ef4444; background: #ef4444; color: #fff; }
+
+.submit-btn {
+    margin-top: 16px;
+    background: var(--ink);
+    color: #fff;
+    border: none;
+    padding: 13px 32px;
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: .85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: .2s;
+    letter-spacing: .3px;
+}
+
+.submit-btn:hover:not(:disabled) {
+    background: var(--accent);
+    transform: translateY(-1px);
+}
+
+.submit-btn:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ── Результати тестування ── */
+.result-card {
+    margin-top: 16px;
+    border-radius: 14px;
+    padding: 24px;
+    text-align: center;
+}
+
+.result-card.pass { background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 1.5px solid #86efac; }
+.result-card.fail { background: linear-gradient(135deg, #fef2f2, #fee2e2); border: 1.5px solid #fca5a5; }
+
+.res-score {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.8rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.result-card.pass .res-score { color: var(--green); }
+.result-card.fail .res-score { color: #dc2626; }
+
+.res-sub {
+    font-size: .85rem;
+    color: var(--ink2);
+    margin: 6px 0 16px;
+}
+
+.retry-btn {
+    background: transparent;
+    border: 1.5px solid var(--border2);
+    color: var(--ink2);
+    padding: 8px 22px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .82rem;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.retry-btn:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+}
+
+/* ── Права колонка уроку (Сайдбар) ── */
+.sb-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.sb-label {
+    font-family: 'Syne', sans-serif;
+    font-size: .7rem;
+    font-weight: 700;
+    color: var(--ink3);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 14px;
+}
+
+.progress-donut-wrap {
+    text-align: center;
+    padding: 8px 0 16px;
+}
+
+.big-pct {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.6rem;
+    font-weight: 800;
+    color: var(--ink);
+    line-height: 1;
+}
+
+.big-pct-sub {
+    font-size: .78rem;
+    color: var(--ink3);
+    margin-top: 2px;
+}
+
+.checklist {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+}
+
+.cl-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: .84rem;
+}
+
+.cl-box {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .75rem;
+    flex-shrink: 0;
+    border: 1.5px solid var(--border);
+}
+
+.cl-box.done { background: var(--green); border-color: var(--green); color: #fff; }
+.cl-box.todo { background: var(--bg); color: var(--ink3); }
+.cl-text.done { text-decoration: line-through; color: var(--ink3); }
+
+.tip-box {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 14px;
+    font-size: .82rem;
+    color: var(--ink2);
+    line-height: 1.6;
+}
+
+.tip-box strong {
+    color: var(--ink);
+}
+
+/* ═══════════════════════════════════════════════════════
+   ADMIN: АДМІН-ПАНЕЛЬ ВЧИТЕЛЯ
+   ═══════════════════════════════════════════════════════ */
+#view-admin {
+    padding: 40px;
+}
+
+.admin-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 24px;
+}
+
+@media (max-width: 800px) {
+    .admin-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Навігація в адмінці (бокова колонка) ── */
+.admin-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.nav-section-label {
+    font-family: 'Syne', sans-serif;
+    font-size: .68rem;
+    font-weight: 700;
+    color: var(--ink3);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin: 12px 0 4px 4px;
+}
+
+.nav-btn {
+    background: transparent;
+    border: 1.5px solid transparent;
+    color: var(--ink2);
+    padding: 10px 14px;
+    border-radius: 10px;
+    text-align: left;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .84rem;
+    transition: .18s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-btn:hover {
+    background: var(--surface);
+    border-color: var(--border);
+}
+
+.nav-btn.active {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--accent);
+    font-weight: 500;
+}
+
+.nav-btn .nav-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--border2);
+    flex-shrink: 0;
+}
+
+.nav-btn.active .nav-dot {
+    background: var(--accent);
+}
+
+/* ── Кнопки швидкого створення ("+") ── */
+.add-btn {
+    border: 1.5px dashed var(--border2);
+    color: var(--ink3);
+    text-align: center;
+    justify-content: center;
+    font-size: .8rem;
+}
+
+.add-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: transparent;
+}
+
+/* ── Панель форм та полів вводу ── */
+.admin-panel {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 18px;
+    padding: 32px;
+}
+
+.ap-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1.5px solid var(--border);
+}
+
+.field {
+    margin-bottom: 20px;
+}
+
+.field label {
+    display: block;
+    font-family: 'Syne', sans-serif;
+    font-size: .7rem;
+    font-weight: 700;
+    color: var(--ink3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 7px;
+}
+
+.field input, 
+.field textarea, 
+.field select {
+    width: 100%;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    color: var(--ink);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .88rem;
+    transition: .18s;
+}
+
+.field input:focus, 
+.field textarea:focus, 
+.field select:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: #fff;
+}
+
+.field textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.field select option {
+    background: #fff;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.sep {
+    border: none;
+    border-top: 1.5px solid var(--border);
+    margin: 22px 0;
+}
+
+/* ── Конструктор Питань Тесту ── */
+.q-editor-block {
+    background: var(--bg);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border: 1.5px solid var(--border);
+}
+
+.qe-header {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.qe-num {
+    font-family: 'Syne', sans-serif;
+    font-size: .72rem;
+    font-weight: 700;
+    color: var(--ink3);
+    background: var(--border);
+    padding: 3px 8px;
+    border-radius: 20px;
+}
+
+.qe-del {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--ink3);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 2px 6px;
+    transition: .2s;
+}
+
+.qe-del:hover {
+    color: #dc2626;
+}
+
+.opts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.opt-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.opt-row input[type=text] {
+    flex: 1;
+    font-size: .82rem;
+    padding: 8px 10px;
+}
+
+.opt-row input[type=radio] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--green);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.opt-label {
+    font-size: .7rem;
+    color: var(--ink3);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    min-width: 14px;
+}
+
+.add-q-btn {
+    background: transparent;
+    border: 1.5px dashed var(--border2);
+    color: var(--ink3);
+    padding: 10px;
+    border-radius: 10px;
+    width: 100%;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .82rem;
+    cursor: pointer;
+    transition: .18s;
+    margin-top: 4px;
+}
+
+.add-q-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* ── Дії форми (Кнопки збереження/видалення) ── */
+.form-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1.5px solid var(--border);
+}
+
+.btn-primary {
+    background: var(--ink);
+    color: #fff;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: .82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: .2s;
+    letter-spacing: .3px;
+}
+
+.btn-primary:hover {
+    background: var(--accent);
+}
+
+.btn-danger {
+    background: transparent;
+    border: 1.5px solid #fca5a5;
+    color: #dc2626;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .82rem;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.btn-danger:hover {
+    background: #fef2f2;
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1.5px solid var(--border2);
+    color: var(--ink2);
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .82rem;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.btn-secondary:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+}
+
+/* ═══════════════════════════════════════════════════════
+   TOAST NOTIFICATIONS (Спливаючі вікна) ТА ПОРОЖНІ СТАНИ
+   ═══════════════════════════════════════════════════════ */
+.toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--ink);
+    color: #fff;
+    padding: 12px 26px;
+    border-radius: 12px;
+    font-size: .85rem;
+    font-weight: 500;
+    z-index: 999;
+    opacity: 0;
+    transition: .3s;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 64px 24px;
+    color: var(--ink3);
+}
+
+.es-icon {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    opacity: .4;
+}
