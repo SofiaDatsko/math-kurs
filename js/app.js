@@ -36,22 +36,23 @@ function toast(msg) {
 const TEACHER_EMAIL = import.meta.env.VITE_TEACHER_EMAIL;
 
 // ═══════════════════════════════════════════════════════
-// БЛОК 1: ДАНІ ТА СХОВИЩЕ (ОНОВЛЕНА БАЗА 5-11 КЛАС)
+// БЛОК 1: ДАНІ ТА СХОВИЩЕ (ОНОВЛЕНА БАЗА СТРУКТУРИ КУРСІВ)
 // ═══════════════════════════════════════════════════════
 const STORE_KEY = 'mathpro_v5';
 
+// Модернізована структура: додано поле "qImg" для картинки питання
 const seed = {
     courses: [
         {
             id: 'c5', grade: 5, title: '5 клас', desc: 'Натуральні числа, дроби, основи геометрії', color: 0,
-            topics: [{ id: 't5_1', title: 'Додавання і віднімання натуральних чисел', desc: 'Повторення дій з числами', presUrl: '', materials: [{title: 'Стор. 15 — №45', url: '#'}], questions: [{q: 'Сума 125 і 75?', opts: ['150', '200', '250', '190'], correct: 1}], unlocked: true, passed: false }]
+            topics: [{ id: 't5_1', title: 'Додавання і віднімання натуральних чисел', desc: 'Повторення дій з числами', presUrl: '', materials: [{title: 'Стор. 15 — №45', url: '#'}], questions: [{q: 'Сума 125 і 75?', qImg: '', opts: ['150', '200', '250', '190'], correct: 1}], unlocked: true, passed: false }]
         },
-        { id: 'c6', grade: 6, title: '6 клас', desc: 'Подільність чисел, звичайні дроби', color: 1, topics: [{ id: 't6_1', title: 'Ознаки подільності', desc: 'Подільність на 2, 5 і 10', presUrl: '', materials: [{title: 'Стор. 30', url: '#'}], questions: [{q: 'Що ділиться на 5?', opts: ['123', '456', '785', '901'], correct: 2}], unlocked: true, passed: false }] },
-        { id: 'c7', grade: 7, title: '7 клас', desc: 'Числа, відсотки, функції, геометрія', color: 2, topics: [{ id: 't7_1', title: 'Натуральні числа', desc: 'Дії з числами', presUrl: '', materials: [{title: 'Стор. 12', url: '#'}], questions: [{q: 'Яке число натуральне?', opts: ['0', '-5', '7', '3.14'], correct: 2}], unlocked: true, passed: false }] },
-        { id: 'c8', grade: 8, title: '8 клас', desc: 'Алгебра, квадратні корені, рівняння', color: 3, topics: [{ id: 't8_1', title: 'Лінійні рівняння', desc: 'Рівняння першого степеня', presUrl: '', materials: [{title: 'Стор. 120', url: '#'}], questions: [{q: '2x + 4 = 10, x = ?', opts: ['2', '3', '4', '5'], correct: 1}], unlocked: true, passed: false }] },
-        { id: 'c9', grade: 9, title: '9 клас', desc: 'Квадратична функція, прогресії', color: 4, topics: [{ id: 't9_1', title: 'Степені та корені', desc: 'Властивості степенів', presUrl: '', materials: [{title: 'Стор. 102', url: '#'}], questions: [{q: '2³ = ?', opts: ['6', '9', '8', '16'], correct: 2}], unlocked: true, passed: false }] },
-        { id: 'c10', grade: 10, title: '10 клас', desc: 'Вступ до стереометрії, triгонометрія', color: 0, topics: [{ id: 't10_1', title: 'Радіанна міра кута', desc: 'Градуси та радіани', presUrl: '', materials: [{title: 'Повторити кути', url: '#'}], questions: [{q: 'Кут 180° це:', opts: ['π/2', 'π', '2π', '3π/2'], correct: 1}], unlocked: true, passed: false }] },
-        { id: 'c11', grade: 11, title: '11 клас', desc: 'Похідна, інтеграл, комбінаторика', color: 1, topics: [{ id: 't11_1', title: 'Поняття похідної', desc: 'Зміст похідної', presUrl: '', materials: [{title: 'Таблиця похідних', url: '#'}], questions: [{q: 'Похідна x²:', opts: ['x', '2', '2x', 'x³'], correct: 2}], unlocked: true, passed: false }] }
+        { id: 'c6', grade: 6, title: '6 клас', desc: 'Подільність чисел, звичайні дроби', color: 1, topics: [{ id: 't6_1', title: 'Ознаки подільності', desc: 'Подільність на 2, 5 і 10', presUrl: '', materials: [{title: 'Стор. 30', url: '#'}], questions: [{q: 'Що ділиться на 5?', qImg: '', opts: ['123', '456', '785', '901'], correct: 2}], unlocked: true, passed: false }] },
+        { id: 'c7', grade: 7, title: '7 клас', desc: 'Числа, відсотки, функції, геометрія', color: 2, topics: [{ id: 't7_1', title: 'Натуральні числа', desc: 'Дії з числами', presUrl: '', materials: [{title: 'Стор. 12', url: '#'}], questions: [{q: 'Яке число натуральне?', qImg: '', opts: ['0', '-5', '7', '3.14'], correct: 2}], unlocked: true, passed: false }] },
+        { id: 'c8', grade: 8, title: '8 клас', desc: 'Алгебра, квадратні корені, рівняння', color: 3, topics: [{ id: 't8_1', title: 'Лінійні рівняння', desc: 'Рівняння першого степеня', presUrl: '', materials: [{title: 'Стор. 120', url: '#'}], questions: [{q: '2x + 4 = 10, x = ?', qImg: '', opts: ['2', '3', '4', '5'], correct: 1}], unlocked: true, passed: false }] },
+        { id: 'c9', grade: 9, title: '9 клас', desc: 'Квадратична функція, прогресії', color: 4, topics: [{ id: 't9_1', title: 'Степені та корені', desc: 'Властивості степенів', presUrl: '', materials: [{title: 'Стор. 102', url: '#'}], questions: [{q: '2³ = ?', qImg: '', opts: ['6', '9', '8', '16'], correct: 2}], unlocked: true, passed: false }] },
+        { id: 'c10', grade: 10, title: '10 клас', desc: 'Вступ до стереометрії, тригонометрія', color: 0, topics: [{ id: 't10_1', title: 'Радіанна міра кута', desc: 'Градуси та радіани', presUrl: '', materials: [{title: 'Повторити кути', url: '#'}], questions: [{q: 'Кут 180° це:', qImg: '', opts: ['π/2', 'π', '2π', '3π/2'], correct: 1}], unlocked: true, passed: false }] },
+        { id: 'c11', grade: 11, title: '11 клас', desc: 'Похідна, інтеграл, комбінаторика', color: 1, topics: [{ id: 't11_1', title: 'Поняття похідної', desc: 'Зміст похідної', presUrl: '', materials: [{title: 'Таблиця похідних', url: '#'}], questions: [{q: 'Похідна x²:', qImg: '', opts: ['x', '2', '2x', 'x³'], correct: 2}], unlocked: true, passed: false }] }
     ]
 };
 
@@ -60,7 +61,6 @@ function loadDB() {
         const s = localStorage.getItem(STORE_KEY); 
         let data = s ? JSON.parse(s) : JSON.parse(JSON.stringify(seed));
         
-        // Міграція: якщо є старе hw, перетворюємо в materials
         data.courses.forEach(c => {
             c.topics.forEach(t => {
                 if (t.hw && !t.materials) {
@@ -68,6 +68,12 @@ function loadDB() {
                     delete t.hw;
                 }
                 if (!t.materials) t.materials = [];
+                // Накат міграції для старих баз без поля qImg
+                if (t.questions) {
+                    t.questions.forEach(q => {
+                        if (q.qImg === undefined) q.qImg = '';
+                    });
+                }
             });
         });
         return data;
@@ -85,10 +91,10 @@ function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt
 let currentUser = null; 
 let db = loadDB();
 let state = { page: 'home', courseId: null, topicId: null };
-let testState = { answers: {}, submitted: false };
+// Оновлено стейт: answers збереже масив вибраних варіантів, solutions — лінки на розв'язки питань
+let testState = { answers: {}, solutions: {}, submitted: false };
 const LETTERS = ['А', 'Б', 'В', 'Г'];
 
-// Слухач стану авторизації
 auth.onAuthStateChanged((user) => {
     if (user) {
         currentUser = {
@@ -173,7 +179,7 @@ function updateBreadcrumb() {
 
 function goHome() { state = { page: 'home', courseId: null, topicId: null }; renderHome(); showView('view-home'); updateBreadcrumb(); }
 function goCourse(cid) { state = { page: 'course', courseId: cid, topicId: null }; renderCourse(cid); showView('view-course'); updateBreadcrumb(); }
-function goLesson(cid, tid) { state = { page: 'lesson', courseId: cid, topicId: tid }; testState = { answers: {}, submitted: false }; renderLesson(cid, tid); showView('view-lesson'); updateBreadcrumb(); }
+function goLesson(cid, tid) { state = { page: 'lesson', courseId: cid, topicId: tid }; testState = { answers: {}, solutions: {}, submitted: false }; renderLesson(cid, tid); showView('view-lesson'); updateBreadcrumb(); }
 
 function toggleAdmin() {
     if (!currentUser || currentUser.role !== 'teacher') return;
@@ -212,15 +218,13 @@ function renderCourse(cid) {
 }
 
 // ═══════════════════════════════════════════════════════
-// БЛОК 4: ЕКРАН УРОКУ ТА ТЕСТУ (ОНОВЛЕНО ДЛЯ CANVA/IFRAME)
+// БЛОК 4: ЕКРАН УРОКУ ТА ТЕСТУ (ОНОВЛЕНО КАРТИНКИ ТА РОЗВ'ЯЗКИ)
 // ═══════════════════════════════════════════════════════
 function renderLesson(cid, tid) {
     const t = findTopic(cid, tid); 
     if (!t) return;
     
     const container = document.getElementById('lesson-inner'); 
-    
-    // Відображення матеріалів (файлів)
     const matItems = t.materials.map(m => `
         <li class="hw-item">
             <span class="hw-dot"></span>
@@ -230,16 +234,13 @@ function renderLesson(cid, tid) {
         </li>
     `).join('');
 
-    // ЛОГІКА РОЗПІЗНАВАННЯ ПРЕЗЕНТАЦІЇ
     let presContent = `<div class="pres-empty"><div class="pe-icon">📊</div><p>Презентацію ще не додано.</p></div>`;
-    
     if (t.presUrl && t.presUrl.trim() !== '') {
         if (t.presUrl.includes('<iframe')) {
             presContent = t.presUrl
                 .replace(/width=".*?"/, 'width="100%"')
                 .replace(/height=".*?"/, 'height="450px"');
-        } 
-        else {
+        } else {
             presContent = `
                 <div style="text-align:center; padding:40px; background:var(--bg); border-radius:12px;">
                     <a href="${esc(t.presUrl)}" target="_blank" class="btn-primary" 
@@ -279,11 +280,41 @@ function renderLesson(cid, tid) {
 }
 
 function renderTestBlock(cid, tid) {
-    const t = findTopic(cid, tid); const testContainer = document.getElementById('test-container');
+    const t = findTopic(cid, tid); 
+    const testContainer = document.getElementById('test-container');
     if (!t.questions.length) { testContainer.innerHTML = '<p style="color:var(--ink3)">Тест ще не додано.</p>'; return; }
-    const qs = t.questions.map((q, qi) => `<div class="q-block" id="qb-${qi}"><div class="q-text">${qi + 1}. ${esc(q.q)}</div><div class="q-opts">${q.opts.map((o, oi) => `<button class="opt-btn" id="ob-${qi}-${oi}"><span class="opt-letter">${LETTERS[oi]}</span>${esc(o)}</button>`).join('')}</div></div>`).join('');
-    testContainer.innerHTML = `<div class="test-questions">${qs}</div><button class="submit-btn" id="test-submit" disabled>Перевірити відповіді</button><div id="test-result"></div>`;
-    t.questions.forEach((q, qi) => q.opts.forEach((_, oi) => { document.getElementById(`ob-${qi}-${oi}`).onclick = () => pickOpt(qi, oi, t); }));
+    
+    // Модифікована генерація питань з підтримкою картинок та блоку завантаження розв'язку
+    const qs = t.questions.map((q, qi) => {
+        const imgHtml = q.qImg && q.qImg.trim() !== '' 
+            ? `<div class="q-image-container" style="margin: 12px 0;"><img src="${esc(q.qImg)}" alt="Завдання" style="max-width:100%; max-height:280px; border-radius:8px; border:1px solid var(--border); object-fit:contain;"></div>` 
+            : '';
+            
+        return `
+        <div class="q-block" id="qb-${qi}" style="border-bottom:1px solid var(--border); padding-bottom:20px; margin-bottom:20px;">
+            <div class="q-text" style="font-weight:600; font-size:1.05rem;">${qi + 1}. ${esc(q.q)}</div>
+            ${imgHtml}
+            <div class="q-opts" style="margin-top:12px; display:grid; gap:8px;">
+                ${q.opts.map((o, oi) => `<button class="opt-btn" id="ob-${qi}-${oi}" style="text-align:left; padding:10px 14px;"><span class="opt-letter" style="margin-right:10px; font-weight:700;">${LETTERS[oi]}</span>${esc(o)}</button>`).join('')}
+            </div>
+            <div class="q-sol-attach" style="margin-top:14px; background:var(--bg); padding:10px 14px; border-radius:8px;">
+                <label style="font-size:0.82rem; color:var(--ink2); display:block; margin-bottom:6px; font-weight:500;">📎 Прикріпити розв'язок (посилання на фото/Drive, за бажанням):</label>
+                <input type="text" class="field solution-input" id="qs-${qi}" placeholder="https://example.com/my-photo.jpg" style="width:100%; font-size:0.85rem; padding:6px 10px;" />
+            </div>
+        </div>`;
+    }).join('');
+    
+    testContainer.innerHTML = `<div class="test-questions">${qs}</div><button class="submit-btn" id="test-submit" disabled style="width:100%; padding:14px; font-weight:700;">Перевірити відповіді</button><div id="test-result" style="margin-top:15px;"></div>`;
+    
+    t.questions.forEach((q, qi) => {
+        q.opts.forEach((_, oi) => { 
+            document.getElementById(`ob-${qi}-${oi}`).onclick = () => pickOpt(qi, oi, t); 
+        });
+        // Слухач на інпут розв'язку для збереження в тимчасовий стейт
+        document.getElementById(`qs-${qi}`).oninput = (e) => {
+            testState.solutions[qi] = e.target.value.trim();
+        };
+    });
     document.getElementById('test-submit').onclick = () => submitTest(cid, tid);
 }
 
@@ -300,45 +331,67 @@ function pickOpt(qi, oi, t) {
 }
 
 function submitTest(cid, tid) {
-    if (testState.submitted) return; testState.submitted = true;
-    const t = findTopic(cid, tid); const c = findCourse(cid); let correct = 0;
+    if (testState.submitted) return; 
+    testState.submitted = true;
+    
+    const t = findTopic(cid, tid); 
+    const c = findCourse(cid); 
+    let correct = 0;
+    
     t.questions.forEach((q, qi) => {
         const chosen = testState.answers[qi];
+        const solInput = document.getElementById(`qs-${qi}`);
+        if (solInput) solInput.disabled = true; // блокуємо зміну посилань після відправки
+        
         for (let oi = 0; oi < q.opts.length; oi++) {
             const btn = document.getElementById(`ob-${qi}-${oi}`); if (!btn) continue; btn.disabled = true;
             if (oi === q.correct) btn.classList.add('correct'); else if (oi === chosen) btn.classList.add('wrong');
         }
         if (chosen === q.correct) correct++;
     });
-    const pct = Math.round((correct / t.questions.length) * 100); const pass = pct >= 80;
+    
+    const pct = Math.round((correct / t.questions.length) * 100); 
+    const pass = pct >= 80;
+    
     document.getElementById('test-submit').style.display = 'none';
     document.getElementById('test-result').innerHTML = `<div class="result-card ${pass ? 'pass' : 'fail'}"><div class="res-score">${pct}%</div>${!pass ? `<button class="retry-btn" id="retry-btn">🔄 Спробувати ще раз</button>` : ''}</div>`;
-    if (!pass) document.getElementById('retry-btn').onclick = () => { testState = { answers: {}, submitted: false }; renderTestBlock(cid, tid); };
+    
+    if (!pass) document.getElementById('retry-btn').onclick = () => { testState = { answers: {}, solutions: {}, submitted: false }; renderTestBlock(cid, tid); };
+    
     if (pass && !t.passed) {
         t.passed = true; 
         const idx = c.topics.findIndex(tp => tp.id === tid);
         if (idx >= 0 && idx + 1 < c.topics.length) c.topics[idx + 1].unlocked = true;
         saveDB(db); 
         renderSidebarBlock(t);
+    }
 
-        if (currentUser && currentUser.role === 'student') {
-            let studentName = auth.currentUser.displayName || currentUser.email.split('@')[0];
-            db_cloud.collection("student_results").add({
-                studentName: studentName,
-                studentEmail: currentUser.email,
-                courseTitle: c.title,
-                topicTitle: t.title,
-                score: pct,
-                date: new Date().toLocaleString('uk-UA')
-            })
-            .then(() => { console.log("Прогрес збережено в хмарі!"); })
-            .catch((error) => { console.error("Помилка збереження: ", error); });
-        }
+    // Зберігаємо результати учня в Cloud Firestore (Включаючи завантажені розв'язки)
+    if (currentUser && currentUser.role === 'student') {
+        let studentName = auth.currentUser.displayName || currentUser.email.split('@')[0];
+        
+        // Перетворюємо об'єкт рішень у зручний для читання вчителем масив тексту
+        let attachedSolutions = [];
+        t.questions.forEach((_, qi) => {
+            attachedSolutions.push(testState.solutions[qi] || "Не надано");
+        });
+
+        db_cloud.collection("student_results").add({
+            studentName: studentName,
+            studentEmail: currentUser.email,
+            courseTitle: c.title,
+            topicTitle: t.title,
+            score: pct,
+            solutions: attachedSolutions, // Нове поле у вашій базі Firebase Cloud
+            date: new Date().toLocaleString('uk-UA')
+        })
+        .then(() => { console.log("Прогрес та розв'язки успішно завантажено в хмару!"); })
+        .catch((error) => { console.error("Помилка збереження: ", error); });
     }
 }
 
 // ═══════════════════════════════════════════════════════
-// БЛОК 5: ПОВНОЦІННА АДМІНКА ВЧИТЕЛЯ (+ ПРОГРЕС УЧНІВ)
+// БЛОК 5: ПОВНОЦІННА АДМІНКА ВЧИТЕЛЯ (+ ВІДОБРАЖЕННЯ РОЗВ'ЯЗКІВ)
 // ═══════════════════════════════════════════════════════
 let adminLayoutState = { section: 'courses', courseId: null, topicId: null };
 
@@ -391,6 +444,7 @@ function renderAdmin() {
     
     renderAdminContent();
 }
+
 function renderAdminContent() {
     const el = document.getElementById('admin-content');
     
@@ -398,7 +452,7 @@ function renderAdminContent() {
         el.innerHTML = `
             <div class="admin-panel">
                 <div class="ap-title">📊 Журнал успішності учнів</div>
-                <p style="color:var(--ink3); font-size:0.85rem; margin-bottom:20px;">Результати тестувань, завантажені з бази даних у реальному часі.</p>
+                <p style="color:var(--ink3); font-size:0.85rem; margin-bottom:20px;">Результати тестувань разом із прикріпленими розв'язками завдань.</p>
                 <div style="overflow-x:auto;">
                     <table style="width:100%; border-collapse:collapse; font-size:0.9rem; text-align:left;">
                         <thead>
@@ -407,11 +461,12 @@ function renderAdminContent() {
                                 <th style="padding:12px 8px;">Клас/Курс</th>
                                 <th style="padding:12px 8px;">Тема</th>
                                 <th style="padding:12px 8px; text-align:center;">Оцінка</th>
+                                <th style="padding:12px 8px;">Прикріплені розв'язки</th>
                                 <th style="padding:12px 8px;">Дата здачі</th>
                             </tr>
                         </thead>
                         <tbody id="cloud-results-tbody">
-                            <tr><td colspan="5" style="padding:24px; text-align:center; color:var(--ink3);">Завантаження даних із хмари...</td></tr>
+                            <tr><td colspan="6" style="padding:24px; text-align:center; color:var(--ink3);">Завантаження даних із хмари...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -421,7 +476,7 @@ function renderAdminContent() {
             .then((querySnapshot) => {
                 const tbody = document.getElementById('cloud-results-tbody');
                 if (querySnapshot.empty) {
-                    tbody.innerHTML = `<tr><td colspan="5" style="padding:24px; text-align:center; color:var(--ink3);">Жоден учень ще не проходив тести.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="6" style="padding:24px; text-align:center; color:var(--ink3);">Жоден учень ще не проходив тести.</td></tr>`;
                     return;
                 }
                 let rowsHtml = "";
@@ -429,12 +484,26 @@ function renderAdminContent() {
                     const data = doc.data();
                     const badgeColor = data.score >= 80 ? 'var(--green)' : 'var(--accent)';
                     const bgBadge = data.score >= 80 ? '#f0fdf4' : '#fff4ed';
+                    
+                    // Форматування відображення розв'язків учнів у таблиці
+                    let solLinksHtml = `<span style="color:var(--ink3); font-size:0.8rem;">Немає</span>`;
+                    if (data.solutions && Array.isArray(data.solutions)) {
+                        solLinksHtml = data.solutions.map((sol, index) => {
+                            if (sol && sol !== "Не надано") {
+                                return `<a href="${esc(sol)}" target="_blank" style="display:inline-block; margin:2px; padding:2px 6px; background:#e0f2fe; color:#0369a1; border-radius:4px; text-decoration:none; font-size:0.78rem; font-weight:500;">№${index+1} ↗</a>`;
+                            }
+                            return '';
+                        }).join('').trim();
+                        if (solLinksHtml === '') solLinksHtml = `<span style="color:var(--ink3); font-size:0.8rem;">Немає</span>`;
+                    }
+
                     rowsHtml += `
                         <tr style="border-bottom:1px solid var(--border); height:50px;">
                             <td style="padding:8px; font-weight:500;">${esc(data.studentName)}<br><span style="font-size:0.75rem; color:var(--ink3); font-weight:400;">${esc(data.studentEmail)}</span></td>
                             <td style="padding:8px; color:var(--ink2);">${esc(data.courseTitle)}</td>
                             <td style="padding:8px; color:var(--ink2);">${esc(data.topicTitle)}</td>
                             <td style="padding:8px; text-align:center;"><span style="padding:4px 10px; border-radius:12px; font-weight:700; background:${bgBadge}; color:${badgeColor}; border:1px solid ${badgeColor}30;">${data.score}%</span></td>
+                            <td style="padding:8px;">${solLinksHtml}</td>
                             <td style="padding:8px; color:var(--ink3); font-size:0.8rem;">${esc(data.date)}</td>
                         </tr>`;
                 });
@@ -442,7 +511,7 @@ function renderAdminContent() {
             })
             .catch((error) => {
                 console.error(error);
-                document.getElementById('cloud-results-tbody').innerHTML = `<tr><td colspan="5" style="padding:24px; text-align:center; color:#ef4444;">Помилка безпеки. Перевірте правила Rules в Firestore.</td></tr>`;
+                document.getElementById('cloud-results-tbody').innerHTML = `<tr><td colspan="6" style="padding:24px; text-align:center; color:#ef4444;">Помилка безпеки. Перевірте правила Rules в Firestore.</td></tr>`;
             });
         return;
     }
@@ -473,21 +542,18 @@ function renderAdminContent() {
     else if (adminLayoutState.section === 'topic') {
         const t = findTopic(adminLayoutState.courseId, adminLayoutState.topicId); if (!t) return;
         const qEditors = t.questions.map((q, qi) => buildQEditor(q, qi)).join('');
-        
-        // Форматуємо матеріали для відображення в textarea (Назва | URL)
         const matText = t.materials.map(m => `${m.title} | ${m.url}`).join('\n');
 
         el.innerHTML = `<div class="admin-panel"><div class="ap-title">Тема: ${esc(t.title)}</div><div class="form-row"><div class="field"><label>Назва теми</label><input id="at-title" value="${esc(t.title)}"/></div><div class="field"><label>Короткий опис</label><input id="at-desc" value="${esc(t.desc)}"/></div></div><div class="field"><label>Посилання на презентацію</label><input id="at-pres" value="${esc(t.presUrl)}"/></div><div class="field"><label>Додаткові матеріали (формат: Назва | Посилання, кожен з нового рядка)</label><textarea id="at-materials" rows="5">${esc(matText)}</textarea></div><div class="form-row"><div class="field"><label><input type="checkbox" id="at-unlocked" ${t.unlocked ? 'checked' : ''}> Відкрита тема</label></div><div class="field"><label><input type="checkbox" id="at-passed" ${t.passed ? 'checked' : ''}> Пройдено</label></div></div><hr class="sep"/><div class="field"><label>Питання тесту</label><div id="qed-list">${qEditors}</div><button class="add-q-btn" id="as-add-q-btn">+ Додати питання</button></div><div class="form-actions"><button class="btn-primary" id="as-topic-save">💾 Зберегти тему</button><button class="btn-secondary" id="as-topic-del">Видалити тему</button></div></div>`;
 
         t.questions.forEach((_, qi) => { document.getElementById(`qed-del-${qi}`).onclick = () => { collectQuestions(t); t.questions.splice(qi, 1); saveDB(db); renderAdminContent(); }; });
-        document.getElementById('as-add-q-btn').onclick = () => { collectQuestions(t); t.questions.push({q: '', opts: ['', '', '', ''], correct: 0}); saveDB(db); renderAdminContent(); };
+        document.getElementById('as-add-q-btn').onclick = () => { collectQuestions(t); t.questions.push({q: '', qImg: '', opts: ['', '', '', ''], correct: 0}); saveDB(db); renderAdminContent(); };
         
         document.getElementById('as-topic-save').onclick = () => { 
             t.title = document.getElementById('at-title').value.trim() || t.title; 
             t.desc = document.getElementById('at-desc').value.trim(); 
             t.presUrl = document.getElementById('at-pres').value.trim(); 
             
-            // Парсинг матеріалів
             const rawMat = document.getElementById('at-materials').value;
             t.materials = rawMat.split('\n').filter(l => l.trim()).map(line => {
                 const parts = line.split('|');
@@ -505,13 +571,31 @@ function renderAdminContent() {
     }
 }
 
+// Додано інпут `qi-` для введення посилання на зображення в картку редактора питання
 function buildQEditor(q, qi) {
-    return `<div class="q-editor-block" id="qed-${qi}"><div class="qe-header"><span class="qe-num">Питання ${qi + 1}</span><button class="qe-del" id="qed-del-${qi}">✕</button></div><input class="field" style="width:100%; margin-bottom:12px;" id="qt-${qi}" value="${esc(q.q)}" placeholder="Текст питання"/><div class="opts-grid">${q.opts.map((o, oi) => `<div class="opt-row"><input type="radio" name="cr-${qi}" value="${oi}" ${q.correct === oi ? 'checked' : ''}><span class="opt-label">${LETTERS[oi]}</span><input type="text" class="field" style="flex:1;" id="qo-${qi}-${oi}" value="${esc(o)}"/></div>`).join('')}</div></div>`;
+    return `
+    <div class="q-editor-block" id="qed-${qi}" style="border:1px solid var(--border); padding:15px; border-radius:8px; margin-bottom:15px; background:#fff;">
+        <div class="qe-header" style="display:flex; justify-content:between; align-items:center; margin-bottom:10px;">
+            <span class="qe-num" style="font-weight:700;">Питання ${qi + 1}</span>
+            <button class="qe-del" id="qed-del-${qi}" style="background:none; border:none; color:red; cursor:pointer; font-weight:700;">✕</button>
+        </div>
+        <input class="field" style="width:100%; margin-bottom:8px;" id="qt-${qi}" value="${esc(q.q)}" placeholder="Текст питання"/>
+        <input class="field" style="width:100%; margin-bottom:12px; font-size:0.85rem;" id="qi-${qi}" value="${esc(q.qImg || '')}" placeholder="URL-посилання на картинку (якщо потрібно)"/>
+        <div class="opts-grid" style="display:grid; gap:8px;">
+            ${q.opts.map((o, oi) => `
+                <div class="opt-row" style="display:flex; align-items:center; gap:8px;">
+                    <input type="radio" name="cr-${qi}" value="${oi}" ${q.correct === oi ? 'checked' : ''}>
+                    <span class="opt-label" style="font-weight:600;">${LETTERS[oi]}</span>
+                    <input type="text" class="field" style="flex:1;" id="qo-${qi}-${oi}" value="${esc(o)}"/>
+                </div>`).join('')}
+        </div>
+    </div>`;
 }
 
 function collectQuestions(t) {
     t.questions.forEach((_, qi) => {
         const txt = document.getElementById(`qt-${qi}`); if (txt) t.questions[qi].q = txt.value;
+        const imgTxt = document.getElementById(`qi-${qi}`); if (imgTxt) t.questions[qi].qImg = imgTxt.value.trim();
         for (let oi = 0; oi < 4; oi++) { const op = document.getElementById(`qo-${qi}-${oi}`); if (op) t.questions[qi].opts[oi] = op.value; }
         const radios = document.querySelectorAll(`input[name="cr-${qi}"]`); radios.forEach(r => { if (r.checked) t.questions[qi].correct = parseInt(r.value); });
     });
