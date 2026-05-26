@@ -355,19 +355,16 @@ function submitTest(cid, tid) {
 // БЛОК 5: ПОВНОЦІННА АДМІНКА ВЧИТЕЛЯ (+ ПРОГРЕС УЧНІВ)
 // ═══════════════════════════════════════════════════════
 function renderAdmin() {
-    const nav = document.getElementById('admin-nav'); 
-    if (!nav) return;
+    const nav = document.getElementById('admin-nav'); if (!nav) return;
     
     let html = `<div class="nav-section-label">Аналітика</div>
     <button class="nav-btn ${adminLayoutState.section === 'requests' ? 'active' : ''}" data-action="go-requests"><span class="nav-dot"></span>📩 Запити</button>
     <button class="nav-btn ${adminLayoutState.section === 'progress' ? 'active' : ''}" data-action="go-progress"><span class="nav-dot"></span>📊 Прогрес учнів</button>
-    
     <div class="nav-section-label" style="margin-top:20px;">Курси</div>`;
     
     db.courses.forEach(c => {
         const isCActive = adminLayoutState.section === 'course' && adminLayoutState.courseId === c.id;
         html += `<button class="nav-btn ${isCActive ? 'active' : ''}" data-action="edit-course" data-id="${c.id}"><span class="nav-dot"></span>${esc(c.title)}</button>`;
-        
         if (adminLayoutState.courseId === c.id && (adminLayoutState.section === 'course' || adminLayoutState.section === 'topic')) {
             c.topics.forEach(t => {
                 const isTActive = adminLayoutState.section === 'topic' && adminLayoutState.topicId === t.id;
@@ -380,35 +377,19 @@ function renderAdmin() {
     nav.innerHTML = html;
 
     nav.onclick = (e) => {
-        const btn = e.target.closest('button');
-        if (!btn) return;
+        const btn = e.target.closest('button'); if (!btn) return;
         const { action, id, cid, tid } = btn.dataset;
-
         if (action === 'go-requests') adminLayoutState = { section: 'requests', courseId: null, topicId: null };
         if (action === 'go-progress') adminLayoutState = { section: 'progress', courseId: null, topicId: null };
         if (action === 'edit-course') adminLayoutState = { section: 'course', courseId: id, topicId: null };
         if (action === 'edit-topic') adminLayoutState = { section: 'topic', courseId: cid, topicId: tid };
-        if (action === 'add-course') {
-            const newId = 'c' + Date.now();
-            db.courses.push({id: newId, grade: 10, title: 'Новий курс', desc: 'Опис', color: db.courses.length % 5, topics: [] });
-            saveDB(db); adminLayoutState = {section: 'course', courseId: newId, topicId: null};
-        }
-        if (action === 'add-topic') {
-            const course = findCourse(id);
-            const newTid = 't' + Date.now();
-            course.topics.push({id: newTid, title: 'Нова тема', desc: 'Опис', presUrl: '', materials: [{title: 'Завдання 1', url: '#'}], questions: [], unlocked: false, passed: false});
-            saveDB(db); adminLayoutState = {section: 'topic', courseId: id, topicId: newTid};
-            toast('✨ Створено нову тему!');
-        }
         renderAdmin();
     };
-    
     renderAdminContent();
 }
 
 function renderAdminContent() {
     const el = document.getElementById('admin-content');
-    
     if (adminLayoutState.section === 'requests') {
         el.innerHTML = `<div class="admin-panel"><h3>📩 Запити на доступ</h3><div id="req-list">Завантаження...</div></div>`;
         db_cloud.collection('course_requests').where('status', '==', 'pending').onSnapshot(snap => {
@@ -541,6 +522,7 @@ window.approveRequest = async (docId) => {
     } catch (e) { toast('Помилка схвалення'); }
 };
 
+
 function buildQEditor(q, qi) {
     return `<div class="q-editor-block" id="qed-${qi}"><div class="qe-header"><span class="qe-num">Питання ${qi + 1}</span><button class="qe-del" id="qed-del-${qi}">✕</button></div><input class="field" style="width:100%; margin-bottom:12px;" id="qt-${qi}" value="${esc(q.q)}" placeholder="Текст питання"/><div class="opts-grid">${q.opts.map((o, oi) => `<div class="opt-row"><input type="radio" name="cr-${qi}" value="${oi}" ${q.correct === oi ? 'checked' : ''}><span class="opt-label">${LETTERS[oi]}</span><input type="text" class="field" style="flex:1;" id="qo-${qi}-${oi}" value="${esc(o)}"/></div>`).join('')}</div></div>`;
 }
@@ -561,5 +543,7 @@ function init() {
     document.getElementById('auth-login-btn').onclick = handleEmailLogin;
     document.getElementById('auth-logout-btn').onclick = handleLogout;
 }
-
-window.onload = init;
+window.onload = () => {
+    document.getElementById('auth-google-btn').onclick = handleGoogleLogin;
+    document.getElementById('auth-logout-btn').onclick = handleLogout;
+};
