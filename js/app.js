@@ -6,13 +6,13 @@ import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Ініціалізація додатку
@@ -36,7 +36,7 @@ function toast(msg) {
 const TEACHER_EMAIL = import.meta.env.VITE_TEACHER_EMAIL;
 
 // ═══════════════════════════════════════════════════════
-// БЛОК 1: ДАНІ ТА СХОВИЩЕ (ОНОВЛЕНА БАЗА 5-11 КЛАС)
+// БЛОК 1: ДАНІ ТА СХОВИЩЕ
 // ═══════════════════════════════════════════════════════
 const STORE_KEY = 'mathpro_v5';
 
@@ -59,17 +59,6 @@ function loadDB() {
     try { 
         const s = localStorage.getItem(STORE_KEY); 
         let data = s ? JSON.parse(s) : JSON.parse(JSON.stringify(seed));
-        
-        // Міграція: якщо є старе hw, перетворюємо в materials
-        data.courses.forEach(c => {
-            c.topics.forEach(t => {
-                if (t.hw && !t.materials) {
-                    t.materials = t.hw.map(item => ({ title: item, url: '#' }));
-                    delete t.hw;
-                }
-                if (!t.materials) t.materials = [];
-            });
-        });
         return data;
     }
     catch { return JSON.parse(JSON.stringify(seed)); }
@@ -80,31 +69,40 @@ function findTopic(cid, tid) { const c = findCourse(cid); return c ? c.topics.fi
 function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 // ═══════════════════════════════════════════════════════
-// БЛОК 2: АВТОРИЗАЦІЯ FIREBASE ТА РОУТИНГ
+// БЛОК 2: СТАН ТА АВТОРИЗАЦІЯ
 // ═══════════════════════════════════════════════════════
 let currentUser = null; 
 let db = loadDB();
 let state = { page: 'home', courseId: null, topicId: null };
 let testState = { answers: {}, submitted: false };
+let myApprovedCourses = []; // Список ID курсів, до яких є доступ
 const LETTERS = ['А', 'Б', 'В', 'Г'];
 
-// Слухач стану авторизації
-auth.onAuthStateChanged((user) => {
+// Завантаження дозволених курсів для студента
+async function loadUserAccess() {
+    if (!currentUser || currentUser.role === 'teacher') return;
+    try {
+        const snapshot = await db_cloud.collection('course_requests')
+            .where('studentEmail', '==', currentUser.email)
+            .where('status', '==', 'approved')
+            .get();
+        myApprovedCourses = snapshot.docs.map(doc => doc.data().courseId);
+        renderHome(); 
+    } catch (e) { console.error("Access load error:", e); }
+}
+
+auth.onAuthStateChanged(async (user) => {
     if (user) {
         currentUser = {
             uid: user.uid,
             email: user.email,
             role: user.email === TEACHER_EMAIL ? 'teacher' : 'student'
         };
-        
-        let nameToShow = user.displayName;
-        if (!nameToShow && user.email) {
-            nameToShow = user.email.split('@')[0];
-        }
-        
-        document.getElementById('user-welcome-text').textContent = `Вітаємо, ${nameToShow || 'користувач'}!`;
+        document.getElementById('user-welcome-text').textContent = `Вітаємо, ${user.displayName || user.email.split('@')[0]}!`;
         document.getElementById('user-profile-block').style.display = 'flex';
         document.getElementById('auth-screen').style.display = 'none';
+        
+        if (currentUser.role === 'student') await loadUserAccess();
         setupInterfaceForRole();
     } else {
         currentUser = null;
@@ -115,38 +113,22 @@ auth.onAuthStateChanged((user) => {
 
 function handleGoogleLogin() {
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider)
-        .catch(err => {
-            if (err.code === 'auth/popup-blocked') { auth.signInWithRedirect(provider); } 
-            else { alert('Помилка входу через Google: ' + err.message); }
-        });
+    auth.signInWithPopup(provider).catch(err => alert('Помилка Google: ' + err.message));
 }
 
 function handleEmailLogin() {
     const email = document.getElementById('auth-email').value.trim();
     const password = document.getElementById('auth-password').value;
-    if (!email || !password) return alert('Заповніть поля для входу викладача!');
-
-    auth.signInWithEmailAndPassword(email, password)
-        .then(() => toast('Успішний вхід викладача!'))
-        .catch(err => alert('Помилка входу: ' + err.message));
+    if (!email || !password) return alert('Заповніть поля!');
+    auth.signInWithEmailAndPassword(email, password).catch(err => alert('Помилка: ' + err.message));
 }
 
-function handleLogout() {
-    auth.signOut().then(() => {
-        toast('Ви вийшли з системи');
-    });
-}
+function handleLogout() { auth.signOut().then(() => window.location.reload()); }
 
 function setupInterfaceForRole() {
     const adminBtn = document.getElementById('admin-toggle-btn');
-    if (currentUser && currentUser.role === 'teacher') {
-        adminBtn.style.display = 'block';
-        adminBtn.onclick = toggleAdmin;
-    } else {
-        adminBtn.style.display = 'none';
-        if (state.page === 'admin') goHome(); 
-    }
+    adminBtn.style.display = (currentUser && currentUser.role === 'teacher') ? 'block' : 'none';
+    if (adminBtn.style.display === 'block') adminBtn.onclick = toggleAdmin;
     goHome();
 }
 
@@ -155,60 +137,115 @@ function showView(id) {
     document.getElementById(id).classList.add('active');
 }
 
-function updateBreadcrumb() {
-    const bc = document.getElementById('breadcrumb');
-    let html = `<span class="bc-item ${state.page === 'home' ? 'current' : ''}" id="bc-home">Усі курси</span>`;
-    if (state.courseId) {
-        const c = findCourse(state.courseId);
-        if (c) html += `<span class="bc-sep">›</span><span class="bc-item ${state.page === 'course' ? 'current' : ''}" id="bc-course">${c.title}</span>`;
-    }
-    if (state.topicId && state.courseId) {
-        const t = findTopic(state.courseId, state.topicId);
-        if (t) html += `<span class="bc-sep">›</span><span class="bc-item current">${t.title}</span>`;
-    }
-    bc.innerHTML = html;
-    document.getElementById('bc-home').onclick = goHome;
-    if (document.getElementById('bc-course')) document.getElementById('bc-course').onclick = () => goCourse(state.courseId);
-}
-
-function goHome() { state = { page: 'home', courseId: null, topicId: null }; renderHome(); showView('view-home'); updateBreadcrumb(); }
-function goCourse(cid) { state = { page: 'course', courseId: cid, topicId: null }; renderCourse(cid); showView('view-course'); updateBreadcrumb(); }
-function goLesson(cid, tid) { state = { page: 'lesson', courseId: cid, topicId: tid }; testState = { answers: {}, submitted: false }; renderLesson(cid, tid); showView('view-lesson'); updateBreadcrumb(); }
+function goHome() { state = { page: 'home', courseId: null, topicId: null }; renderHome(); showView('view-home'); }
+function goCourse(cid) { state = { page: 'course', courseId: cid, topicId: null }; renderCourse(cid); showView('view-course'); }
+function goLesson(cid, tid) { state = { page: 'lesson', courseId: cid, topicId: tid }; testState = { answers: {}, submitted: false }; renderLesson(cid, tid); showView('view-lesson'); }
 
 function toggleAdmin() {
-    if (!currentUser || currentUser.role !== 'teacher') return;
     const isAdminOpen = document.getElementById('view-admin').classList.contains('active');
-    if (isAdminOpen) { adminLayoutState = { section: 'courses', courseId: null, topicId: null }; goHome(); } 
-    else { state.page = 'admin'; renderAdmin(); showView('view-admin'); updateBreadcrumb(); }
+    if (isAdminOpen) goHome(); 
+    else { state.page = 'admin'; renderAdmin(); showView('view-admin'); }
 }
 
 // ═══════════════════════════════════════════════════════
-// БЛОК 3: ВІДОБРАЖЕННЯ КУРСІВ ТА ТЕМ
+// БЛОК 3: ВІДОБРАЖЕННЯ КУРСІВ (НОВА ЛОГІКА ЗАМКА)
 // ═══════════════════════════════════════════════════════
 function renderHome() {
     const el = document.getElementById('home-inner'); const CC = ['cc-c0', 'cc-c1', 'cc-c2', 'cc-c3', 'cc-c4'];
-    const cards = db.courses.map(c => {
-        const total = c.topics.length; const done = c.topics.filter(t => t.passed).length; const pct = total ? Math.round(done / total * 100) : 0;
-        const div = document.createElement('div'); div.className = `course-card ${CC[c.color % CC.length]}`;
-        div.innerHTML = `<div class="cc-banner"><div class="cc-grade-label">${c.grade}</div></div><div class="cc-body"><div class="cc-title">${esc(c.title)}</div><div class="cc-meta"><span>📚 ${total} тем</span><span>✓ ${done} пройдено</span></div><div class="cc-progress"><div class="cc-progress-fill" style="width:${pct}%"></div></div><div class="cc-prog-text"><span>${esc(c.desc)}</span><span>${pct}%</span></div></div>`;
-        div.onclick = () => goCourse(c.id); return div;
+    
+    el.innerHTML = `<div style="padding:48px 40px 0"><div class="page-title">Мої курси</div><div class="page-sub">Обери клас і розпочни навчання</div></div><div style="padding:24px 40px 48px"><div class="courses-grid" id="grid"></div></div>`;
+    const grid = el.querySelector('#grid');
+
+    db.courses.map(c => {
+        const hasAccess = currentUser?.role === 'teacher' || myApprovedCourses.includes(c.id);
+        const div = document.createElement('div'); 
+        div.className = `course-card ${CC[c.color % CC.length]} ${hasAccess ? '' : 'locked-card'}`;
+        
+        div.innerHTML = `
+            <div class="cc-banner"><div class="cc-grade-label">${hasAccess ? c.grade : '🔒'}</div></div>
+            <div class="cc-body">
+                <div class="cc-title">${esc(c.title)}</div>
+                <div class="cc-prog-text"><span>${esc(c.desc)}</span></div>
+                ${hasAccess 
+                    ? `<button class="btn-primary" style="width:100%; margin-top:15px;" onclick="goCourse('${c.id}')">Відкрити</button>`
+                    : `<button class="btn-secondary" style="width:100%; margin-top:15px;" onclick="requestAccess('${c.id}', '${esc(c.title)}')">Запитати доступ</button>`
+                }
+            </div>`;
+        grid.appendChild(div);
     });
-    el.innerHTML = `<div style="padding:48px 40px 0"><div class="page-title">Мої курси</div><div class="page-sub">Обери клас і розпочни навчання</div></div><div style="padding:24px 40px 48px"><div class="courses-grid" id="courses-grid-container"></div></div>`;
-    const grid = el.querySelector('#courses-grid-container'); cards.forEach(card => grid.appendChild(card));
 }
 
+window.requestAccess = async (cid, title) => {
+    if (!currentUser) return;
+    try {
+        await db_cloud.collection('course_requests').add({
+            studentEmail: currentUser.email,
+            studentName: auth.currentUser.displayName || currentUser.email.split('@')[0],
+            courseId: cid,
+            courseTitle: title,
+            status: 'pending',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        toast('✅ Запит надіслано вчителю!');
+    } catch (e) { toast('Помилка запиту'); }
+};
+
 function renderCourse(cid) {
-    const c = findCourse(cid); if (!c) return; const done = c.topics.filter(t => t.passed).length;
+    const c = findCourse(cid); if (!c) return;
     const container = document.getElementById('course-inner');
-    container.innerHTML = `<div class="course-header"><div class="ch-left"><h2>${esc(c.title)}</h2><p>${esc(c.desc)} • ${done} з ${c.topics.length} тем завершено</p></div></div><div class="topics-list" id="topics-list-container"></div>`;
-    const listContainer = container.querySelector('#topics-list-container');
+    container.innerHTML = `<div class="course-header"><h2>${esc(c.title)}</h2><button class="btn-secondary" onclick="goHome()">← До списку</button></div><div class="topics-list" id="topics-list"></div>`;
+    const list = container.querySelector('#topics-list');
+    
     c.topics.forEach((t, i) => {
-        const locked = !t.unlocked; const done2 = t.passed; const row = document.createElement('div');
-        row.className = `topic-row ${locked ? 'locked' : ''} ${done2 ? 'done' : ''}`;
-        row.innerHTML = `<div class="tr-num">${locked ? '🔒' : done2 ? '✓' : `${i + 1}`}</div><div class="tr-body"><div class="tr-title">${esc(t.title)}</div><div class="tr-meta"><span>📎 ${t.materials.length} мат.</span><span>❓ ${t.questions.length} питань</span></div></div><div class="tr-right">${done2 ? '<span class="status-chip sc-done">Пройдено ✓</span>' : locked ? '<span class="status-chip sc-lock">Заблоковано</span>' : '<span class="status-chip sc-new">Почати →</span>'}${!locked ? '<span class="tr-arrow">›</span>' : ''}</div>`;
+        const locked = !t.unlocked; const done = t.passed;
+        const row = document.createElement('div');
+        row.className = `topic-row ${locked ? 'locked' : ''} ${done ? 'done' : ''}`;
+        row.innerHTML = `<div class="tr-num">${locked ? '🔒' : i+1}</div><div class="tr-body"><div class="tr-title">${esc(t.title)}</div></div><div class="tr-right">${locked ? 'Закрито' : 'Почати →'}</div>`;
         if (!locked) row.onclick = () => goLesson(cid, t.id);
-        listContainer.appendChild(row);
+        list.appendChild(row);
     });
+}
+
+function renderLesson(cid, tid) {
+    const t = findTopic(cid, tid); if (!t) return;
+    const container = document.getElementById('lesson-inner'); 
+    const matItems = t.materials.map(m => `<li class="hw-item"><a href="${m.url}" target="_blank">${esc(m.title)}</a></li>`).join('');
+
+    container.innerHTML = `
+        <button class="btn-secondary" onclick="goCourse('${cid}')" style="margin-bottom:15px">← До тем</button>
+        <h3>${esc(t.title)}</h3>
+        <div class="lesson-section"><h4>Презентація</h4>${t.presUrl ? `<iframe src="${t.presUrl}" width="100%" height="450px"></iframe>` : 'Немає'}</div>
+        <div class="lesson-section"><h4>Додаткові матеріали</h4><ul class="hw-list">${matItems}</ul></div>
+        <div class="lesson-section"><h4>Тест</h4><div id="test-container"></div></div>`;
+    renderTestBlock(cid, tid);
+}
+
+function renderTestBlock(cid, tid) {
+    const t = findTopic(cid, tid); const testContainer = document.getElementById('test-container');
+    if (!t.questions.length) { testContainer.innerHTML = 'Тесту немає.'; return; }
+    testContainer.innerHTML = `<button class="btn-primary" id="test-start">Почати тест</button>`;
+    document.getElementById('test-start').onclick = () => {
+        testContainer.innerHTML = t.questions.map((q, qi) => `
+            <div class="q-block">
+                <p>${qi+1}. ${esc(q.q)}</p>
+                ${q.opts.map((o, oi) => `<button class="opt-btn" onclick="testState.answers[${qi}]=${oi}">${esc(o)}</button>`).join('')}
+            </div>
+        `).join('') + `<button class="btn-primary" id="test-sub">Здати тест</button>`;
+        document.getElementById('test-sub').onclick = () => submitTest(cid, tid);
+    };
+}
+
+function submitTest(cid, tid) {
+    const t = findTopic(cid, tid); const c = findCourse(cid);
+    let score = 0;
+    t.questions.forEach((q, i) => { if(testState.answers[i] === q.correct) score++; });
+    const pct = Math.round((score / t.questions.length) * 100);
+    if (pct >= 80) {
+        t.passed = true;
+        const idx = c.topics.findIndex(tp => tp.id === tid);
+        if (idx >= 0 && idx + 1 < c.topics.length) c.topics[idx+1].unlocked = true;
+        saveDB(db); toast('✅ Пройдено!'); goCourse(cid);
+    } else alert(`Твій результат ${pct}%. Потрібно 80%.`);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -335,6 +372,59 @@ function submitTest(cid, tid) {
             .catch((error) => { console.error("Помилка збереження: ", error); });
         }
     }
+    let adminLayoutState = { section: 'requests' };
+
+function renderAdmin() {
+    const nav = document.getElementById('admin-nav');
+    nav.innerHTML = `
+        <button class="nav-btn" onclick="adminLayoutState.section='requests'; renderAdminContent();">📩 Запити</button>
+        <button class="nav-btn" onclick="adminLayoutState.section='progress'; renderAdminContent();">📊 Журнал</button>
+        <button class="nav-btn" onclick="adminLayoutState.section='courses'; renderAdminContent();">📚 Курси</button>
+    `;
+    renderAdminContent();
+}
+
+function renderAdminContent() {
+    const el = document.getElementById('admin-content');
+    if (adminLayoutState.section === 'requests') {
+        el.innerHTML = `<div class="admin-panel"><h3>Запити на доступ</h3><div id="req-list">Завантаження...</div></div>`;
+        db_cloud.collection('course_requests').where('status', '==', 'pending').onSnapshot(snap => {
+            const list = document.getElementById('req-list');
+            list.innerHTML = snap.empty ? 'Запитів немає' : '';
+            snap.forEach(doc => {
+                const d = doc.data();
+                const div = document.createElement('div');
+                div.className = 'topic-row';
+                div.innerHTML = `<span><b>${d.studentName}</b> хочет доступ до <b>${d.courseTitle}</b></span><button class="btn-primary" onclick="approveRequest('${doc.id}')">Схвалити</button>`;
+                list.appendChild(div);
+            });
+        });
+    } else if (adminLayoutState.section === 'progress') {
+        el.innerHTML = '<div class="admin-panel"><h3>Журнал успішності</h3><div id="prog-list"></div></div>';
+        db_cloud.collection('student_results').orderBy('date', 'desc').get().then(snap => {
+            const list = document.getElementById('prog-list');
+            snap.forEach(doc => {
+                const d = doc.data();
+                list.innerHTML += `<div class="topic-row">${d.studentName} - ${d.topicTitle} - ${d.score}%</div>`;
+            });
+        });
+    } else {
+        el.innerHTML = '<div class="admin-panel">Тут старий код редагування курсів...</div>';
+    }
+}
+
+window.approveRequest = async (docId) => {
+    try {
+        await db_cloud.collection('course_requests').doc(docId).update({ status: 'approved' });
+        toast('✅ Доступ надано!');
+    } catch (e) { toast('Помилка схвалення'); }
+};
+
+window.onload = () => {
+    document.getElementById('auth-google-btn').onclick = handleGoogleLogin;
+    document.getElementById('auth-login-btn').onclick = handleEmailLogin;
+    document.getElementById('auth-logout-btn').onclick = handleLogout;
+};
 }
 
 // ═══════════════════════════════════════════════════════
