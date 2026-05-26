@@ -148,7 +148,7 @@ function toggleAdmin() {
 }
 
 // ═══════════════════════════════════════════════════════
-// БЛОК 3: ВІДОБРАЖЕННЯ КУРСІВ (НОВА ЛОГІКА ЗАМКА)
+// БЛОК 3: ВІДОБРАЖЕННЯ КУРСІВ (ЛОГІКА ЗАМКА)
 // ═══════════════════════════════════════════════════════
 function renderHome() {
     const el = document.getElementById('home-inner'); const CC = ['cc-c0', 'cc-c1', 'cc-c2', 'cc-c3', 'cc-c4'];
@@ -156,7 +156,7 @@ function renderHome() {
     el.innerHTML = `<div style="padding:48px 40px 0"><div class="page-title">Мої курси</div><div class="page-sub">Обери клас і розпочни навчання</div></div><div style="padding:24px 40px 48px"><div class="courses-grid" id="grid"></div></div>`;
     const grid = el.querySelector('#grid');
 
-    db.courses.map(c => {
+    db.courses.forEach(c => {
         const hasAccess = currentUser?.role === 'teacher' || myApprovedCourses.includes(c.id);
         const div = document.createElement('div'); 
         div.className = `course-card ${CC[c.color % CC.length]} ${hasAccess ? '' : 'locked-card'}`;
@@ -206,58 +206,14 @@ function renderCourse(cid) {
     });
 }
 
-function renderLesson(cid, tid) {
-    const t = findTopic(cid, tid); if (!t) return;
-    const container = document.getElementById('lesson-inner'); 
-    const matItems = t.materials.map(m => `<li class="hw-item"><a href="${m.url}" target="_blank">${esc(m.title)}</a></li>`).join('');
-
-    container.innerHTML = `
-        <button class="btn-secondary" onclick="goCourse('${cid}')" style="margin-bottom:15px">← До тем</button>
-        <h3>${esc(t.title)}</h3>
-        <div class="lesson-section"><h4>Презентація</h4>${t.presUrl ? `<iframe src="${t.presUrl}" width="100%" height="450px"></iframe>` : 'Немає'}</div>
-        <div class="lesson-section"><h4>Додаткові матеріали</h4><ul class="hw-list">${matItems}</ul></div>
-        <div class="lesson-section"><h4>Тест</h4><div id="test-container"></div></div>`;
-    renderTestBlock(cid, tid);
-}
-
-function renderTestBlock(cid, tid) {
-    const t = findTopic(cid, tid); const testContainer = document.getElementById('test-container');
-    if (!t.questions.length) { testContainer.innerHTML = 'Тесту немає.'; return; }
-    testContainer.innerHTML = `<button class="btn-primary" id="test-start">Почати тест</button>`;
-    document.getElementById('test-start').onclick = () => {
-        testContainer.innerHTML = t.questions.map((q, qi) => `
-            <div class="q-block">
-                <p>${qi+1}. ${esc(q.q)}</p>
-                ${q.opts.map((o, oi) => `<button class="opt-btn" onclick="testState.answers[${qi}]=${oi}">${esc(o)}</button>`).join('')}
-            </div>
-        `).join('') + `<button class="btn-primary" id="test-sub">Здати тест</button>`;
-        document.getElementById('test-sub').onclick = () => submitTest(cid, tid);
-    };
-}
-
-function submitTest(cid, tid) {
-    const t = findTopic(cid, tid); const c = findCourse(cid);
-    let score = 0;
-    t.questions.forEach((q, i) => { if(testState.answers[i] === q.correct) score++; });
-    const pct = Math.round((score / t.questions.length) * 100);
-    if (pct >= 80) {
-        t.passed = true;
-        const idx = c.topics.findIndex(tp => tp.id === tid);
-        if (idx >= 0 && idx + 1 < c.topics.length) c.topics[idx+1].unlocked = true;
-        saveDB(db); toast('✅ Пройдено!'); goCourse(cid);
-    } else alert(`Твій результат ${pct}%. Потрібно 80%.`);
-}
-
 // ═══════════════════════════════════════════════════════
-// БЛОК 4: ЕКРАН УРОКУ ТА ТЕСТУ (ОНОВЛЕНО ДЛЯ CANVA/IFRAME)
+// БЛОК 4: ЕКРАН УРОКУ ТА ТЕСТУ
 // ═══════════════════════════════════════════════════════
 function renderLesson(cid, tid) {
     const t = findTopic(cid, tid); 
     if (!t) return;
     
     const container = document.getElementById('lesson-inner'); 
-    
-    // Відображення матеріалів (файлів)
     const matItems = t.materials.map(m => `
         <li class="hw-item">
             <span class="hw-dot"></span>
@@ -267,7 +223,6 @@ function renderLesson(cid, tid) {
         </li>
     `).join('');
 
-    // ЛОГІКА РОЗПІЗНАВАННЯ ПРЕЗЕНТАЦІЇ
     let presContent = `<div class="pres-empty"><div class="pe-icon">📊</div><p>Презентацію ще не додано.</p></div>`;
     
     if (t.presUrl && t.presUrl.trim() !== '') {
@@ -275,8 +230,7 @@ function renderLesson(cid, tid) {
             presContent = t.presUrl
                 .replace(/width=".*?"/, 'width="100%"')
                 .replace(/height=".*?"/, 'height="450px"');
-        } 
-        else {
+        } else {
             presContent = `
                 <div style="text-align:center; padding:40px; background:var(--bg); border-radius:12px;">
                     <a href="${esc(t.presUrl)}" target="_blank" class="btn-primary" 
@@ -372,71 +326,19 @@ function submitTest(cid, tid) {
             .catch((error) => { console.error("Помилка збереження: ", error); });
         }
     }
-    let adminLayoutState = { section: 'requests' };
-
-function renderAdmin() {
-    const nav = document.getElementById('admin-nav');
-    nav.innerHTML = `
-        <button class="nav-btn" onclick="adminLayoutState.section='requests'; renderAdminContent();">📩 Запити</button>
-        <button class="nav-btn" onclick="adminLayoutState.section='progress'; renderAdminContent();">📊 Журнал</button>
-        <button class="nav-btn" onclick="adminLayoutState.section='courses'; renderAdminContent();">📚 Курси</button>
-    `;
-    renderAdminContent();
-}
-
-function renderAdminContent() {
-    const el = document.getElementById('admin-content');
-    if (adminLayoutState.section === 'requests') {
-        el.innerHTML = `<div class="admin-panel"><h3>Запити на доступ</h3><div id="req-list">Завантаження...</div></div>`;
-        db_cloud.collection('course_requests').where('status', '==', 'pending').onSnapshot(snap => {
-            const list = document.getElementById('req-list');
-            list.innerHTML = snap.empty ? 'Запитів немає' : '';
-            snap.forEach(doc => {
-                const d = doc.data();
-                const div = document.createElement('div');
-                div.className = 'topic-row';
-                div.innerHTML = `<span><b>${d.studentName}</b> хочет доступ до <b>${d.courseTitle}</b></span><button class="btn-primary" onclick="approveRequest('${doc.id}')">Схвалити</button>`;
-                list.appendChild(div);
-            });
-        });
-    } else if (adminLayoutState.section === 'progress') {
-        el.innerHTML = '<div class="admin-panel"><h3>Журнал успішності</h3><div id="prog-list"></div></div>';
-        db_cloud.collection('student_results').orderBy('date', 'desc').get().then(snap => {
-            const list = document.getElementById('prog-list');
-            snap.forEach(doc => {
-                const d = doc.data();
-                list.innerHTML += `<div class="topic-row">${d.studentName} - ${d.topicTitle} - ${d.score}%</div>`;
-            });
-        });
-    } else {
-        el.innerHTML = '<div class="admin-panel">Тут старий код редагування курсів...</div>';
-    }
-}
-
-window.approveRequest = async (docId) => {
-    try {
-        await db_cloud.collection('course_requests').doc(docId).update({ status: 'approved' });
-        toast('✅ Доступ надано!');
-    } catch (e) { toast('Помилка схвалення'); }
-};
-
-window.onload = () => {
-    document.getElementById('auth-google-btn').onclick = handleGoogleLogin;
-    document.getElementById('auth-login-btn').onclick = handleEmailLogin;
-    document.getElementById('auth-logout-btn').onclick = handleLogout;
-};
 }
 
 // ═══════════════════════════════════════════════════════
 // БЛОК 5: ПОВНОЦІННА АДМІНКА ВЧИТЕЛЯ (+ ПРОГРЕС УЧНІВ)
 // ═══════════════════════════════════════════════════════
-let adminLayoutState = { section: 'courses', courseId: null, topicId: null };
+let adminLayoutState = { section: 'requests', courseId: null, topicId: null };
 
 function renderAdmin() {
     const nav = document.getElementById('admin-nav'); 
     if (!nav) return;
     
     let html = `<div class="nav-section-label">Аналітика</div>
+    <button class="nav-btn ${adminLayoutState.section === 'requests' ? 'active' : ''}" data-action="go-requests"><span class="nav-dot"></span>📩 Запити</button>
     <button class="nav-btn ${adminLayoutState.section === 'progress' ? 'active' : ''}" data-action="go-progress"><span class="nav-dot"></span>📊 Прогрес учнів</button>
     
     <div class="nav-section-label" style="margin-top:20px;">Курси</div>`;
@@ -461,6 +363,7 @@ function renderAdmin() {
         if (!btn) return;
         const { action, id, cid, tid } = btn.dataset;
 
+        if (action === 'go-requests') adminLayoutState = { section: 'requests', courseId: null, topicId: null };
         if (action === 'go-progress') adminLayoutState = { section: 'progress', courseId: null, topicId: null };
         if (action === 'edit-course') adminLayoutState = { section: 'course', courseId: id, topicId: null };
         if (action === 'edit-topic') adminLayoutState = { section: 'topic', courseId: cid, topicId: tid };
@@ -481,9 +384,26 @@ function renderAdmin() {
     
     renderAdminContent();
 }
+
 function renderAdminContent() {
     const el = document.getElementById('admin-content');
     
+    if (adminLayoutState.section === 'requests') {
+        el.innerHTML = `<div class="admin-panel"><h3>📩 Запити на доступ</h3><div id="req-list">Завантаження...</div></div>`;
+        db_cloud.collection('course_requests').where('status', '==', 'pending').onSnapshot(snap => {
+            const list = document.getElementById('req-list');
+            list.innerHTML = snap.empty ? 'Запитів немає' : '';
+            snap.forEach(doc => {
+                const d = doc.data();
+                const div = document.createElement('div');
+                div.style = "padding:12px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;";
+                div.innerHTML = `<span><b>${esc(d.studentName)}</b> хоче доступ до <b>${esc(d.courseTitle)}</b></span><button class="btn-primary" onclick="approveRequest('${doc.id}')">Схвалити</button>`;
+                list.appendChild(div);
+            });
+        });
+        return;
+    }
+
     if (adminLayoutState.section === 'progress') {
         el.innerHTML = `
             <div class="admin-panel">
@@ -563,8 +483,6 @@ function renderAdminContent() {
     else if (adminLayoutState.section === 'topic') {
         const t = findTopic(adminLayoutState.courseId, adminLayoutState.topicId); if (!t) return;
         const qEditors = t.questions.map((q, qi) => buildQEditor(q, qi)).join('');
-        
-        // Форматуємо матеріали для відображення в textarea (Назва | URL)
         const matText = t.materials.map(m => `${m.title} | ${m.url}`).join('\n');
 
         el.innerHTML = `<div class="admin-panel"><div class="ap-title">Тема: ${esc(t.title)}</div><div class="form-row"><div class="field"><label>Назва теми</label><input id="at-title" value="${esc(t.title)}"/></div><div class="field"><label>Короткий опис</label><input id="at-desc" value="${esc(t.desc)}"/></div></div><div class="field"><label>Посилання на презентацію</label><input id="at-pres" value="${esc(t.presUrl)}"/></div><div class="field"><label>Додаткові матеріали (формат: Назва | Посилання, кожен з нового рядка)</label><textarea id="at-materials" rows="5">${esc(matText)}</textarea></div><div class="form-row"><div class="field"><label><input type="checkbox" id="at-unlocked" ${t.unlocked ? 'checked' : ''}> Відкрита тема</label></div><div class="field"><label><input type="checkbox" id="at-passed" ${t.passed ? 'checked' : ''}> Пройдено</label></div></div><hr class="sep"/><div class="field"><label>Питання тесту</label><div id="qed-list">${qEditors}</div><button class="add-q-btn" id="as-add-q-btn">+ Додати питання</button></div><div class="form-actions"><button class="btn-primary" id="as-topic-save">💾 Зберегти тему</button><button class="btn-secondary" id="as-topic-del">Видалити тему</button></div></div>`;
@@ -577,7 +495,6 @@ function renderAdminContent() {
             t.desc = document.getElementById('at-desc').value.trim(); 
             t.presUrl = document.getElementById('at-pres').value.trim(); 
             
-            // Парсинг матеріалів
             const rawMat = document.getElementById('at-materials').value;
             t.materials = rawMat.split('\n').filter(l => l.trim()).map(line => {
                 const parts = line.split('|');
@@ -588,12 +505,20 @@ function renderAdminContent() {
             t.passed = document.getElementById('at-passed').checked; 
             collectQuestions(t); 
             saveDB(db); 
-            toast('✓ Тему збережено!'); 
+            toast('✓ Тексти тем збережено!'); 
             renderAdmin(); 
         };
         document.getElementById('as-topic-del').onclick = () => { if (!confirm('Видалити тему?')) return; const c = findCourse(adminLayoutState.courseId); c.topics = c.topics.filter(currT => currT.id !== adminLayoutState.topicId); adminLayoutState.topicId = null; adminLayoutState.section = 'course'; saveDB(db); toast('Тему видалено'); renderAdmin(); };
     }
 }
+
+window.approveRequest = async (docId) => {
+    try {
+        await db_cloud.collection('course_requests').doc(docId).update({ status: 'approved' });
+        toast('✅ Доступ надано!');
+        renderAdminContent();
+    } catch (e) { toast('Помилка схвалення'); }
+};
 
 function buildQEditor(q, qi) {
     return `<div class="q-editor-block" id="qed-${qi}"><div class="qe-header"><span class="qe-num">Питання ${qi + 1}</span><button class="qe-del" id="qed-del-${qi}">✕</button></div><input class="field" style="width:100%; margin-bottom:12px;" id="qt-${qi}" value="${esc(q.q)}" placeholder="Текст питання"/><div class="opts-grid">${q.opts.map((o, oi) => `<div class="opt-row"><input type="radio" name="cr-${qi}" value="${oi}" ${q.correct === oi ? 'checked' : ''}><span class="opt-label">${LETTERS[oi]}</span><input type="text" class="field" style="flex:1;" id="qo-${qi}-${oi}" value="${esc(o)}"/></div>`).join('')}</div></div>`;
