@@ -50,7 +50,7 @@ const seed = {
         { id: 'c7', grade: 7, title: '7 клас', desc: 'Числа, відсотки, функції, геометрія', color: 2, topics: [{ id: 't7_1', title: 'Натуральні числа', desc: 'Дії з числами', presUrl: '', materials: [{title: 'Стор. 12', url: '#'}], questions: [{q: 'Яке число натуральне?', opts: ['0', '-5', '7', '3.14'], correct: 2}], unlocked: true, passed: false }] },
         { id: 'c8', grade: 8, title: '8 клас', desc: 'Алгебра, квадратні корені, рівняння', color: 3, topics: [{ id: 't8_1', title: 'Лінійні рівняння', desc: 'Рівняння першого степеня', presUrl: '', materials: [{title: 'Стор. 120', url: '#'}], questions: [{q: '2x + 4 = 10, x = ?', opts: ['2', '3', '4', '5'], correct: 1}], unlocked: true, passed: false }] },
         { id: 'c9', grade: 9, title: '9 клас', desc: 'Квадратична функція, прогресії', color: 4, topics: [{ id: 't9_1', title: 'Степені та корені', desc: 'Властивості степенів', presUrl: '', materials: [{title: 'Стор. 102', url: '#'}], questions: [{q: '2³ = ?', opts: ['6', '9', '8', '16'], correct: 2}], unlocked: true, passed: false }] },
-        { id: 'c10', grade: 10, title: '10 клас', desc: 'Вступ до стереометрії, triгонометрія', color: 0, topics: [{ id: 't10_1', title: 'Радіанна міра кута', desc: 'Градуси та радіани', presUrl: '', materials: [{title: 'Повторити кути', url: '#'}], questions: [{q: 'Кут 180° це:', opts: ['π/2', 'π', '2π', '3π/2'], correct: 1}], unlocked: true, passed: false }] },
+        { id: 'c10', grade: 10, title: '10 клас', desc: 'Вступ до стереометрії, тригонометрія', color: 0, topics: [{ id: 't10_1', title: 'Радіанна міра кута', desc: 'Градуси та радіани', presUrl: '', materials: [{title: 'Повторити кути', url: '#'}], questions: [{q: 'Кут 180° це:', opts: ['π/2', 'π', '2π', '3π/2'], correct: 1}], unlocked: true, passed: false }] },
         { id: 'c11', grade: 11, title: '11 клас', desc: 'Похідна, інтеграл, комбінаторика', color: 1, topics: [{ id: 't11_1', title: 'Поняття похідної', desc: 'Зміст похідної', presUrl: '', materials: [{title: 'Таблиця похідних', url: '#'}], questions: [{q: 'Похідна x²:', opts: ['x', '2', '2x', 'x³'], correct: 2}], unlocked: true, passed: false }] }
     ]
 };
@@ -75,15 +75,17 @@ let currentUser = null;
 let db = loadDB();
 let state = { page: 'home', courseId: null, topicId: null };
 let testState = { answers: {}, submitted: false };
-let myApprovedCourses = []; // Список ID курсів, до яких є доступ
-let unsubscribeAccess = null; // Для скидання слухача при виході
+let myApprovedCourses = []; 
+let unsubscribeAccess = null; 
 const LETTERS = ['А', 'Б', 'В', 'Г'];
 
-// ЖИВЕ завантаження дозволених курсів для студента (ОНОВЛЕНО НА ONSNAPSHOT)
+// Оголошуємо стан адмінки глобально, щоб код не падав
+let adminLayoutState = { section: 'requests', courseId: null, topicId: null };
+
 function listenToUserAccess() {
     if (!currentUser || currentUser.role === 'teacher') return;
     
-    if (unsubscribeAccess) unsubscribeAccess(); // Вимикаємо старий слухач, якщо він був
+    if (unsubscribeAccess) unsubscribeAccess();
     
     unsubscribeAccess = db_cloud.collection('course_requests')
         .where('studentEmail', '==', currentUser.email)
@@ -91,7 +93,7 @@ function listenToUserAccess() {
         .onSnapshot((snapshot) => {
             myApprovedCourses = snapshot.docs.map(doc => doc.data().courseId);
             if (state.page === 'home') {
-                renderHome(); // Автоматично перерендеримо головну сторінку, як тільки прийде апрув
+                renderHome(); 
             }
         }, (e) => { console.error("Access listen error:", e); });
 }
@@ -110,7 +112,7 @@ auth.onAuthStateChanged((user) => {
         if (currentUser.role === 'student') {
             listenToUserAccess();
         } else {
-            myApprovedCourses = []; // Вчителю масив не потрібен, у нього повний доступ за замовчуванням
+            myApprovedCourses = []; 
         }
         setupInterfaceForRole();
     } else {
@@ -161,11 +163,11 @@ function goLesson(cid, tid) { state = { page: 'lesson', courseId: cid, topicId: 
 function toggleAdmin() {
     const isAdminOpen = document.getElementById('view-admin').classList.contains('active');
     if (isAdminOpen) goHome(); 
-    else { state.page = 'admin'; renderAdmin(); showView('view-admin'); }
+    else { adminLayoutState = { section: 'requests', courseId: null, topicId: null }; state.page = 'admin'; renderAdmin(); showView('view-admin'); }
 }
 
 // ═══════════════════════════════════════════════════════
-// БЛОК 3: ВІДОБРАЖЕННЯ КУРСІВ (ЛОГІКА ПОВНОГО ДОСТУПУ ВЧИТЕЛЯ)
+// БЛОК 3: ВІДОБРАЖЕННЯ КУРСІВ (ВХІД ПО КЛІКУ НА КАРТКУ)
 // ═══════════════════════════════════════════════════════
 function renderHome() {
     const el = document.getElementById('home-inner'); const CC = ['cc-c0', 'cc-c1', 'cc-c2', 'cc-c3', 'cc-c4'];
@@ -174,20 +176,22 @@ function renderHome() {
     const grid = el.querySelector('#grid');
 
     db.courses.forEach(c => {
-        // Якщо зайшов вчитель, у нього ПОВНИЙ ДОСТУП ЗАВЖДИ (hasAccess = true)
         const hasAccess = currentUser?.role === 'teacher' || myApprovedCourses.includes(c.id);
         const div = document.createElement('div'); 
-        div.className = `course-card ${CC[c.color % CC.length]} ${hasAccess ? '' : 'locked-card'}`;
+        
+        // Додаємо стиль pointer курсора, якщо є доступ, щоб було зрозуміло, що картка клікабельна
+        div.className = `course-card ${CC[c.color % CC.length]} ${hasAccess ? 'accessible-card' : 'locked-card'}`;
+        if (hasAccess) {
+            div.style.cursor = 'pointer';
+            div.onclick = () => goCourse(c.id);
+        }
         
         div.innerHTML = `
             <div class="cc-banner"><div class="cc-grade-label">${hasAccess ? c.grade : '🔒'}</div></div>
             <div class="cc-body">
                 <div class="cc-title">${esc(c.title)}</div>
                 <div class="cc-prog-text"><span>${esc(c.desc)}</span></div>
-                ${hasAccess 
-                    ? `<button class="btn-primary" style="width:100%; margin-top:15px;" onclick="goCourse('${c.id}')">Відкрити</button>`
-                    : `<button class="btn-secondary" style="width:100%; margin-top:15px;" onclick="requestAccess('${c.id}', '${esc(c.title)}')">Запитати доступ</button>`
-                }
+                ${!hasAccess ? `<button class="btn-secondary" style="width:100%; margin-top:20px;" onclick="event.stopPropagation(); requestAccess('${c.id}', '${esc(c.title)}')">Запитати доступ</button>` : ''}
             </div>`;
         grid.appendChild(div);
     });
@@ -215,7 +219,8 @@ function renderCourse(cid) {
     const list = container.querySelector('#topics-list');
     
     c.topics.forEach((t, i) => {
-        const locked = !t.unlocked; const done = t.passed;
+        const locked = currentUser?.role !== 'teacher' && !t.unlocked; 
+        const done = t.passed;
         const row = document.createElement('div');
         row.className = `topic-row ${locked ? 'locked' : ''} ${done ? 'done' : ''}`;
         row.innerHTML = `<div class="tr-num">${locked ? '🔒' : i+1}</div><div class="tr-body"><div class="tr-title">${esc(t.title)}</div></div><div class="tr-right">${locked ? 'Закрито' : 'Почати →'}</div>`;
