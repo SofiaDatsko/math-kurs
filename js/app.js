@@ -627,10 +627,20 @@ function renderAdminContent() {
     else if (adminLayoutState.section === 'topic') {
         const t = findTopic(adminLayoutState.courseId, adminLayoutState.topicId); if (!t) return;
         const qEditors = t.questions.map((q, qi) => buildQEditor(q, qi)).join(''); const matText = t.materials.map(m => `${m.title} | ${m.url}`).join('\n');
-        el.innerHTML = `<div class="admin-panel"><div class="ap-title">Тема: ${esc(t.title)}</div><div class="form-row"><div class="field"><label>Назва теми</label><input id="at-title" value="${esc(t.title)}"/></div><div class="field"><label>Опис</label><input id="at-desc" value="${esc(t.desc)}"/></div></div><div class="field"><label>Презентація</label><input id="at-pres" value="${esc(t.presUrl)}"/></div><div class="field"><label>Матеріали</label><textarea id="at-materials" rows="4">${esc(matText)}</textarea></div><div class="field"><label>Питання</label><div id="qed-list">${qEditors}</div><button class="add-q-btn" id="as-add-q-btn">+ Додати питання</button></div><div class="form-actions"><button class="btn-primary" id="as-topic-save">💾 Зберегти тему</button></div></div>`;
+        el.innerHTML = `<div class="admin-panel"><div class="ap-title">Тема: ${esc(t.title)}</div><div class="form-row"><div class="field"><label>Назва теми</label><input id="at-title" value="${esc(t.title)}"/></div><div class="field"><label>Опис</label><input id="at-desc" value="${esc(t.desc)}"/></div></div><div class="field"><label>Презентація</label><input id="at-pres" value="${esc(t.presUrl)}"/></div><div class="field"><label>Матеріали</label><textarea id="at-materials" rows="4">${esc(matText)}</textarea></div><div class="field"><label>Питання</label><div id="qed-list">${qEditors}</div><button class="add-q-btn" id="as-add-q-btn">+ Додати питання</button></div><div class="form-actions" style="display:flex; gap:12px; align-items:center;"><button class="btn-primary" id="as-topic-save">💾 Зберегти тему</button><button id="as-topic-delete" style="padding:10px 18px; border-radius:8px; border:1px solid #ef4444; background:#fff; color:#ef4444; font-weight:600; cursor:pointer;">🗑 Видалити тему</button></div></div>`;
         
         document.getElementById('as-add-q-btn').onclick = () => { collectQuestions(t); t.questions.push({q: '', qImg: '', opts: ['', '', '', ''], correct: 0}); saveDB(db); renderAdminContent(); };
         document.getElementById('as-topic-save').onclick = () => { t.title = document.getElementById('at-title').value.trim(); t.desc = document.getElementById('at-desc').value.trim(); t.presUrl = document.getElementById('at-pres').value.trim(); const rawMat = document.getElementById('at-materials').value; t.materials = rawMat.split('\n').filter(l => l.trim()).map(line => { const parts = line.split('|'); return { title: parts[0].trim(), url: parts[1] ? parts[1].trim() : '#' }; }); collectQuestions(t); saveDB(db); toast('✓ Збережено!'); renderAdmin(); };
+        document.getElementById('as-topic-delete').onclick = () => {
+            if (!confirm(`Видалити тему "${t.title}"? Цю дію неможливо скасувати.`)) return;
+            const course = findCourse(adminLayoutState.courseId);
+            const idx = course.topics.findIndex(topic => topic.id === t.id);
+            if (idx >= 0) course.topics.splice(idx, 1);
+            saveDB(db);
+            toast('🗑 Тему видалено');
+            adminLayoutState = { section: 'course', courseId: course.id, topicId: null };
+            renderAdmin();
+        };
     }
 }
 
