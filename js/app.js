@@ -21,6 +21,19 @@ if (!firebase.apps.length) {
 const auth = firebase.auth();
 const db_cloud = firebase.firestore();
 
+auth.getRedirectResult()
+    .then((result) => {
+        if (result.user) {
+            console.log('Redirect login успішний:', result.user.email);
+        }
+    })
+    .catch((err) => {
+        console.error('Redirect login error:', err);
+        if (err.code !== 'auth/no-current-user' && err.code) {
+            alert('Помилка входу через Google: ' + err.message);
+        }
+    });
+
 function toast(msg) {
     const t = document.getElementById('toast'); 
     if (t) {
@@ -132,10 +145,7 @@ function fetchAccessRights() {
 
 function handleGoogleLogin() {
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider).catch(err => {
-        if (err.code === 'auth/popup-blocked') { auth.signInWithRedirect(provider); } 
-        else { alert('Помилка входу через Google: ' + err.message); }
-    });
+    auth.signInWithRedirect(provider);
 }
 
 function handleEmailLogin() {
