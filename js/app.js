@@ -485,7 +485,27 @@ function renderAdmin() {
         if (action === 'go-requests') adminLayoutState = { section: 'requests', courseId: null, topicId: null };
         if (action === 'edit-course') adminLayoutState = { section: 'course', courseId: id, topicId: null };
         if (action === 'edit-topic') adminLayoutState = { section: 'topic', courseId: cid, topicId: tid };
-        // Логіка створення нових сутностей...
+
+        if (action === 'add-course') {
+            const newId = 'c_' + Date.now();
+            const newCourse = { id: newId, grade: 0, title: 'Новий курс', desc: '', color: 0, topics: [] };
+            db.courses.push(newCourse);
+            saveDB(db);
+            adminLayoutState = { section: 'course', courseId: newId, topicId: null };
+        }
+
+        if (action === 'add-topic') {
+            const course = findCourse(id);
+            if (course) {
+                const newTid = 't_' + Date.now();
+                const newTopic = { id: newTid, title: 'Нова тема', desc: '', presUrl: '', materials: [], questions: [], unlocked: true, passed: false };
+                course.topics.push(newTopic);
+                saveDB(db);
+                adminLayoutState = { section: 'topic', courseId: course.id, topicId: newTid };
+            }
+        }
+
+        renderAdmin();
         renderAdmin();
     };
     renderAdminContent();
