@@ -612,8 +612,17 @@ function renderAdminContent() {
     // Редактори курсів / тем
     if (adminLayoutState.section === 'course') {
         const c = findCourse(adminLayoutState.courseId); if (!c) return;
-        el.innerHTML = `<div class="admin-panel"><div class="ap-title">Редагувати курс: ${esc(c.title)}</div><div class="form-row"><div class="field"><label>Назва курсу</label><input id="ac-title" value="${esc(c.title)}"/></div><div class="field"><label>Клас (число)</label><input id="ac-grade" type="number" value="${c.grade}"/></div></div><div class="field"><label>Опис</label><input id="ac-desc" value="${esc(c.desc)}"/></div><div class="field"><label>Колір (0–4)</label><select id="ac-color">${[0,1,2,3,4].map(i => `<option value="${i}" ${c.color === i ? 'selected' : ''}>Варіант ${i + 1}</option>`).join('')}</select></div><div class="form-actions"><button class="btn-primary" id="as-course-save">💾 Зберегти</button></div></div>`;
+        el.innerHTML = `<div class="admin-panel"><div class="ap-title">Редагувати курс: ${esc(c.title)}</div><div class="form-row"><div class="field"><label>Назва курсу</label><input id="ac-title" value="${esc(c.title)}"/></div><div class="field"><label>Клас (число)</label><input id="ac-grade" type="number" value="${c.grade}"/></div></div><div class="field"><label>Опис</label><input id="ac-desc" value="${esc(c.desc)}"/></div><div class="field"><label>Колір (0–4)</label><select id="ac-color">${[0,1,2,3,4].map(i => `<option value="${i}" ${c.color === i ? 'selected' : ''}>Варіант ${i + 1}</option>`).join('')}</select></div><div class="form-actions" style="display:flex; gap:12px; align-items:center;"><button class="btn-primary" id="as-course-save">💾 Зберегти</button><button id="as-course-delete" style="padding:10px 18px; border-radius:8px; border:1px solid #ef4444; background:#fff; color:#ef4444; font-weight:600; cursor:pointer;">🗑 Видалити курс</button></div></div>`;
         document.getElementById('as-course-save').onclick = () => { c.title = document.getElementById('ac-title').value.trim(); c.grade = parseInt(document.getElementById('ac-grade').value); c.desc = document.getElementById('ac-desc').value.trim(); c.color = parseInt(document.getElementById('ac-color').value); saveDB(db); toast('✓ Збережено!'); renderAdmin(); };
+        document.getElementById('as-course-delete').onclick = () => {
+            if (!confirm(`Видалити курс "${c.title}" разом з усіма темами? Цю дію неможливо скасувати.`)) return;
+            const idx = db.courses.findIndex(course => course.id === c.id);
+            if (idx >= 0) db.courses.splice(idx, 1);
+            saveDB(db);
+            toast('🗑 Курс видалено');
+            adminLayoutState = { section: 'progress', courseId: null, topicId: null };
+            renderAdmin();
+        };
     }
     else if (adminLayoutState.section === 'topic') {
         const t = findTopic(adminLayoutState.courseId, adminLayoutState.topicId); if (!t) return;
