@@ -7,7 +7,7 @@ import 'firebase/compat/firestore';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: 'math-kurs-alpha.vercel.app',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
@@ -133,12 +133,9 @@ function fetchAccessRights() {
 
 function handleGoogleLogin() {
     const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
     auth.signInWithPopup(provider).catch(err => {
-        if (err.code === 'auth/popup-blocked') { 
-            auth.signInWithRedirect(provider); 
-        } else { 
-            alert('Помилка входу через Google: ' + err.message); 
-        }
+        alert('Помилка: ' + err.code + ' — ' + err.message);
     });
 }
 
