@@ -88,18 +88,13 @@ let testState = { answers: {}, solutions: {}, submitted: false };
 let allowedCourses = {}; // Сюди підвантажуватимуться дозволені класи учня з Firestore
 const LETTERS = ['А', 'Б', 'В', 'Г'];
 
-auth.getRedirectResult()
-    .then((result) => {
-        if (result && result.user) {
-            toast('✨ Успішно авторизовано!');
-        }
-    })
-    .catch((err) => {
-        console.error("Помилка обробки редіректу:", err);
-        alert('Помилка авторизації: ' + err.message);
-    });
-    
-auth.onAuthStateChanged((user) => {
+// Прапорець, який вказує, що Firebase ще перевіряє сесію (щоб уникнути миготіння екранів)
+let isAuthResolving = true;
+
+// Функція для відображення стану інтерфейсу залежно від авторизації
+function handleAuthState(user) {
+    isAuthResolving = false; // Перевірку завершено
+
     if (user) {
         currentUser = {
             uid: user.uid,
@@ -120,8 +115,34 @@ auth.onAuthStateChanged((user) => {
         document.getElementById('user-profile-block').style.display = 'none';
         document.getElementById('auth-screen').style.display = 'flex';
     }
-});
+}
 
+auth.getRedirectResult()
+    .then((result) => {
+        // Якщо повернулися від Google з успішним користувачем
+        if (result && result.user) {
+            handleAuthState(result.user);
+        } else {
+            // Якщо це звичайне завантаження сайту без редіректу — запускаємо стандартний слухач
+            auth.onAuthStateChanged((user) => {
+                handleAuthState(user);
+            });
+        }
+    })
+    .catch((err) => {
+        console.error("Помилка обробки редіректу:", err);
+        // Якщо заблоковано сторонні cookies на ноутбуці
+        if (err.code === 'auth/auth-domain-config-required' || err.code === 'auth/operation-not-supported-in-this-environment') {
+            alert("Помилка: Ваш браузер блокує збереження авторизаційних даних. Спробуйте вимкнути режим інкогніто або змінити браузер.");
+        } else {
+            alert('Помилка входу: ' + err.message);
+        }
+        isAuthResolving = false;
+        // Повертаємо на екран логіну у разі помилки
+        handleAuthState(null);
+    });
+
+// Завантаження лімітів доступу для поточного учня
 // Завантаження лімітів доступу для поточного учня
 function fetchAccessRights() {
     if (!currentUser || currentUser.role === 'teacher') {
@@ -135,19 +156,23 @@ function fetchAccessRights() {
             allowedCourses = {};
             snapshot.forEach(doc => {
                 const data = doc.data();
-                allowedCourses[data.courseId] = data.status; // 'pending' або 'approved'
+                allowedCourses[data.courseId] = data.status; 
             });
         })
         .catch(err => console.error("Помилка завантаження прав доступу:", err));
 }
 
 function handleGoogleLogin() {
+    // Показуємо користувачу, що процес пішов, перед тим як редіректнути
+    const loginBtn = document.getElementById('auth-google-btn');
+    if (loginBtn) loginBtn.textContent = '🔄 Перенаправлення...';
+
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     
-    // Перемикаємо з попапу на безпечний редірект
     auth.signInWithRedirect(provider).catch(err => {
         alert('Помилка: ' + err.code + ' — ' + err.message);
+        if (loginBtn) loginBtn.innerHTML = `<span class="g-icon"></span> Увійти через Google`;
     });
 }
 
