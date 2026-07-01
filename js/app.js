@@ -88,6 +88,17 @@ let testState = { answers: {}, solutions: {}, submitted: false };
 let allowedCourses = {}; // Сюди підвантажуватимуться дозволені класи учня з Firestore
 const LETTERS = ['А', 'Б', 'В', 'Г'];
 
+auth.getRedirectResult()
+    .then((result) => {
+        if (result && result.user) {
+            toast('✨ Успішно авторизовано!');
+        }
+    })
+    .catch((err) => {
+        console.error("Помилка обробки редіректу:", err);
+        alert('Помилка авторизації: ' + err.message);
+    });
+    
 auth.onAuthStateChanged((user) => {
     if (user) {
         currentUser = {
@@ -101,7 +112,6 @@ auth.onAuthStateChanged((user) => {
         document.getElementById('user-profile-block').style.display = 'flex';
         document.getElementById('auth-screen').style.display = 'none';
         
-        // Спочатку витягуємо права доступу, потім ініціалізуємо інтерфейс
         fetchAccessRights().then(() => {
             setupInterfaceForRole();
         });
@@ -134,7 +144,9 @@ function fetchAccessRights() {
 function handleGoogleLogin() {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    auth.signInWithPopup(provider).catch(err => {
+    
+    // Перемикаємо з попапу на безпечний редірект
+    auth.signInWithRedirect(provider).catch(err => {
         alert('Помилка: ' + err.code + ' — ' + err.message);
     });
 }
