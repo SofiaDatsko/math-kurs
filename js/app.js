@@ -7,7 +7,7 @@ import 'firebase/compat/firestore';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  authDomain: 'math-kurs-alpha.vercel.app',
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
@@ -21,18 +21,6 @@ if (!firebase.apps.length) {
 const auth = firebase.auth();
 const db_cloud = firebase.firestore();
 
-auth.getRedirectResult()
-    .then((result) => {
-        if (result.user) {
-            console.log('Redirect login успішний:', result.user.email);
-        }
-    })
-    .catch((err) => {
-        console.error('Redirect login error:', err);
-        if (err.code !== 'auth/no-current-user' && err.code) {
-            alert('Помилка входу через Google: ' + err.message);
-        }
-    });
 
 function toast(msg) {
     const t = document.getElementById('toast'); 
@@ -145,7 +133,13 @@ function fetchAccessRights() {
 
 function handleGoogleLogin() {
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithRedirect(provider);
+    auth.signInWithPopup(provider).catch(err => {
+        if (err.code === 'auth/popup-blocked') { 
+            auth.signInWithRedirect(provider); 
+        } else { 
+            alert('Помилка входу через Google: ' + err.message); 
+        }
+    });
 }
 
 function handleEmailLogin() {
