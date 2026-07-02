@@ -126,25 +126,24 @@ function fetchAccessRights() {
         .catch(err => console.error("Помилка завантаження прав доступу:", err));
 }
 
-function handleGoogleLogin() {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
-    auth.signInWithPopup(provider).catch(err => {
-        if (err.code === 'auth/popup-blocked') {
-            auth.signInWithRedirect(provider);
-        } else {
-            alert('Помилка: ' + err.code + '\n' + err.message);
-        }
-    });
+function handleRegister() {
+    const name = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+    if (!name || !email || !password) return alert('Заповніть усі поля!');
+    if (password.length < 6) return alert('Пароль мінімум 6 символів!');
+    auth.createUserWithEmailAndPassword(email, password)
+        .then(result => result.user.updateProfile({ displayName: name }))
+        .then(() => toast('✅ Реєстрація успішна!'))
+        .catch(err => alert('Помилка реєстрації: ' + err.message));
 }
 
-auth.getRedirectResult().then(result => {
-    // onAuthStateChanged сам підхопить користувача
-}).catch(err => {
-    if (err.code && err.code !== 'auth/no-current-user') {
-        console.error('Redirect error:', err);
-    }
-});
+function switchTab(tab) {
+    document.getElementById('panel-login').style.display = tab === 'login' ? 'block' : 'none';
+    document.getElementById('panel-register').style.display = tab === 'register' ? 'block' : 'none';
+    document.getElementById('tab-login').style.background = tab === 'login' ? 'white' : 'transparent';
+    document.getElementById('tab-register').style.background = tab === 'register' ? 'white' : 'transparent';
+}
 
 function handleEmailLogin() {
     const email = document.getElementById('auth-email').value.trim();
@@ -664,8 +663,8 @@ function collectQuestions(t) {
 }
 
 function init() {
-    document.getElementById('auth-google-btn').onclick = handleGoogleLogin;
     document.getElementById('auth-login-btn').onclick = handleEmailLogin;
+    document.getElementById('auth-register-btn').onclick = handleRegister;
     document.getElementById('auth-logout-btn').onclick = handleLogout;
 }
 window.onload = init;
