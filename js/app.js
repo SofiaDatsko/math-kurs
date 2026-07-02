@@ -153,6 +153,20 @@ function handleEmailLogin() {
     auth.signInWithEmailAndPassword(email, password).catch(err => alert('Помилка входу: ' + err.message));
 }
 
+function handleForgotPassword() {
+    const email = document.getElementById('auth-email').value.trim();
+    if (!email) return alert('Введіть email у поле вище, щоб скинути пароль.');
+    auth.sendPasswordResetEmail(email)
+        .then(() => toast('✅ Лист для скидання пароля надіслано на ' + email))
+        .catch(err => {
+            if (err.code === 'auth/user-not-found') {
+                alert('Акаунт з таким email не знайдено.');
+            } else {
+                alert('Помилка: ' + err.message);
+            }
+        });
+}
+
 function handleLogout() { auth.signOut().then(() => toast('Ви вийшли з системи')); }
 
 function setupInterfaceForRole() {
@@ -702,6 +716,7 @@ function collectQuestions(t) {
 
 function init() {
     document.getElementById('auth-login-btn').onclick = handleEmailLogin;
+    document.getElementById('forgot-password-btn').onclick = handleForgotPassword;
     document.getElementById('auth-register-btn').onclick = handleRegister;
     document.getElementById('auth-logout-btn').onclick = handleLogout;
     document.getElementById('profile-btn').onclick = openProfile;
