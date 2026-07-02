@@ -666,5 +666,7 @@ function init() {
     document.getElementById('auth-login-btn').onclick = handleEmailLogin;
     document.getElementById('auth-register-btn').onclick = handleRegister;
     document.getElementById('auth-logout-btn').onclick = handleLogout;
+    document.getElementById('tab-login').onclick = () => switchTab('login');
+    document.getElementById('tab-register').onclick = () => switchTab('register');
 }
 window.onload = init;
