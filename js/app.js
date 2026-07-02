@@ -719,8 +719,12 @@ function collectQuestions(t) {
 }
 
 function init() {
-    // Безпечна перевірка наявності елементів у DOM перед ініціалізацією подій
+    // Авторизація та відновлення пароля
     if(document.getElementById('auth-login-btn')) document.getElementById('auth-login-btn').onclick = handleEmailLogin;
+    if(document.getElementById('auth-register-btn')) document.getElementById('auth-register-btn').onclick = handleRegister;
+    if(document.getElementById('auth-logout-btn')) document.getElementById('auth-logout-btn').onclick = handleLogout;
+    if(document.getElementById('send-reset-btn')) document.getElementById('send-reset-btn').onclick = handleForgotPassword;
+    
     if(document.getElementById('forgot-password-btn')) {
         document.getElementById('forgot-password-btn').onclick = () => {
             document.getElementById('forgot-section').style.display = 'block';
@@ -731,14 +735,17 @@ function init() {
             document.getElementById('forgot-section').style.display = 'none';
         };
     }
-    if(document.getElementById('send-reset-btn')) document.getElementById('send-reset-btn').onclick = handleForgotPassword;
-    if(document.getElementById('auth-register-btn')) document.getElementById('auth-register-btn').onclick = handleRegister;
-    if(document.getElementById('auth-logout-btn')) document.getElementById('auth-logout-btn').onclick = handleLogout;
+
+    // Керування профілем (ВІДКРИТТЯ, ЗАКРИТТЯ та дії всередині)
     if(document.getElementById('profile-btn')) document.getElementById('profile-btn').onclick = openProfile;
+    if(document.getElementById('close-profile-btn')) document.getElementById('close-profile-btn').onclick = closeProfile;
     if(document.getElementById('change-password-btn')) document.getElementById('change-password-btn').onclick = handleChangePassword;
     if(document.getElementById('delete-account-btn')) document.getElementById('delete-account-btn').onclick = handleDeleteAccount;
+    
+    // Перемикання табів входу/реєстрації
     if(document.getElementById('tab-login')) document.getElementById('tab-login').onclick = () => switchTab('login');
     if(document.getElementById('tab-register')) document.getElementById('tab-register').onclick = () => switchTab('register');
 }
 
-window.onload = init;
+// Замість window.onload краще використовувати DOMContentLoaded для надійності:
+document.addEventListener('DOMContentLoaded', init);
