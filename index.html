@@ -1,115 +1,149 @@
 <!DOCTYPE html>
 <html lang="uk">
+
 <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>МатемаТика Pro</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap"
+        rel="stylesheet" />
     <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
 
-<header>
-    <div class="logo">
-        <div class="logo-symbol">∑</div>
-        МатемаТика Pro
-    </div>
-    <div class="breadcrumb" id="breadcrumb"></div>
-    <div class="header-right">
-        <div id="user-profile-block" style="display:none; align-items:center; gap:14px; margin-right:10px; font-size:0.85rem; color:rgba(255,255,255,0.85);">
-            <span id="user-welcome-text"></span>
-            <button id="profile-btn" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:#fff; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:0.75rem;">👤 Профіль</button>
-            <button id="auth-logout-btn" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:#fff; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:0.75rem;">Вихід ↩</button>
+    <header>
+        <div class="logo">
+            <div class="logo-symbol">∑</div>
+            МатемаТика Pro
         </div>
-        <button class="admin-toggle" id="admin-toggle-btn" style="display:none;">⚙ Адмін</button>
-    </div>
-</header>
-
-<div class="view" id="view-home">
-    <div id="home-inner" style="max-width:1100px;margin:0 auto"></div>
-</div>
-<div class="view" id="view-course">
-    <div style="max-width:900px;margin:0 auto" id="course-inner"></div>
-</div>
-<div class="view" id="view-lesson">
-    <div style="max-width:1160px;margin:0 auto" id="lesson-inner"></div>
-</div>
-<div class="view" id="view-admin">
-    <div style="max-width:1100px;margin:0 auto">
-        <div style="margin-bottom:28px">
-            <div class="page-title">Адмін-панель</div>
-            <div class="page-sub">Керуй курсами, темами та тестами</div>
-        </div>
-        <div class="admin-layout">
-            <div class="admin-nav" id="admin-nav"></div>
-            <div id="admin-content"></div>
-        </div>
-    </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<div id="auth-screen" style="position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px;">
-    <div class="admin-panel" style="max-width:400px; width:100%; text-align:center; padding:40px 30px;">
-        <div class="logo-symbol" style="width:50px; height:50px; margin:0 auto 16px; font-size:1.5rem; border-radius:12px;">∑</div>
-        <h2 style="font-family:'Syne',sans-serif; font-size:1.6rem; margin-bottom:24px;">МатемаТика Pro</h2>
-
-        <div style="display:flex; gap:4px; margin-bottom:24px; background:var(--bg); border-radius:10px; padding:4px;">
-            <button id="tab-login" style="flex:1; padding:8px; border-radius:8px; border:none; background:white; font-weight:600; cursor:pointer;">Вхід</button>
-            <button id="tab-register" style="flex:1; padding:8px; border-radius:8px; border:none; background:transparent; cursor:pointer;">Реєстрація</button>
-        </div>
-
-        <div id="panel-login">
-            <div class="field" style="text-align:left;">
-                <input type="email" id="auth-email" placeholder="Електронна пошта" style="padding:8px 12px; font-size:0.85rem;">
+        <div class="breadcrumb" id="breadcrumb"></div>
+        <div class="header-right">
+            <div id="user-profile-block"
+                style="display:none; align-items:center; gap:14px; margin-right:10px; font-size:0.85rem; color:rgba(255,255,255,0.85);">
+                <span id="user-welcome-text"></span>
+                <button id="profile-btn"
+                    style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:#fff; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:0.75rem;">👤
+                    Профіль</button>
+                <button id="auth-logout-btn"
+                    style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:#fff; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:0.75rem;">Вихід
+                    ↩</button>
             </div>
-            <div class="field" style="text-align:left; margin-bottom:14px;">
-                <input type="password" id="auth-password" placeholder="Пароль" style="padding:8px 12px; font-size:0.85rem;">
-            </div>
-            <div id="forgot-section" style="display:none; margin-top:16px; border-top:1px solid var(--border); padding-top:16px;">
-    <div class="field" style="text-align:left;">
-        <input type="email" id="forgot-email" placeholder="Введіть ваш email" style="padding:8px 12px; font-size:0.85rem;">
-    </div>
-    <button class="btn-primary" style="width:100%; padding:10px;" id="send-reset-btn">📧 Надіслати лист</button>
-    <div style="text-align:center; margin-top:8px;">
-        <button id="hide-forgot-btn" style="background:none; border:none; color:var(--ink3); cursor:pointer; font-size:0.8rem;">← Назад до входу</button>
-    </div>
-</div>
-
-<div style="text-align:center; margin-top:12px;">
-    <button id="forgot-password-btn" style="background:none; border:none; color:var(--accent); cursor:pointer; font-size:0.83rem; text-decoration:underline;">Забули пароль?</button>
-</div>>
+            <button class="admin-toggle" id="admin-toggle-btn" style="display:none;">⚙ Адмін</button>
         </div>
+    </header>
 
-        <div id="panel-register" style="display:none;">
-            <div class="field" style="text-align:left;">
-                <input type="text" id="reg-name" placeholder="Ваше ім'я та прізвище" style="padding:8px 12px; font-size:0.85rem;">
+    <div class="view" id="view-home">
+        <div id="home-inner" style="max-width:1100px;margin:0 auto"></div>
+    </div>
+    <div class="view" id="view-course">
+        <div style="max-width:900px;margin:0 auto" id="course-inner"></div>
+    </div>
+    <div class="view" id="view-lesson">
+        <div style="max-width:1160px;margin:0 auto" id="lesson-inner"></div>
+    </div>
+    <div class="view" id="view-admin">
+        <div style="max-width:1100px;margin:0 auto">
+            <div style="margin-bottom:28px">
+                <div class="page-title">Адмін-панель</div>
+                <div class="page-sub">Керуй курсами, темами та тестами</div>
             </div>
-            <div class="field" style="text-align:left;">
-                <input type="email" id="reg-email" placeholder="Електронна пошта" style="padding:8px 12px; font-size:0.85rem;">
+            <div class="admin-layout">
+                <div class="admin-nav" id="admin-nav"></div>
+                <div id="admin-content"></div>
             </div>
-            <div class="field" style="text-align:left; margin-bottom:14px;">
-                <input type="password" id="reg-password" placeholder="Пароль (мін. 6 символів)" style="padding:8px 12px; font-size:0.85rem;">
-            </div>
-            <button class="btn-primary" style="width:100%; padding:10px;" id="auth-register-btn">Зареєструватись →</button>
         </div>
     </div>
-</div>
 
-<div id="profile-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9998; align-items:center; justify-content:center;">
-    <div class="admin-panel" style="max-width:400px; width:90%; padding:32px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
-            <h3 style="font-family:'Syne',sans-serif; margin:0;">👤 Мій профіль</h3>
-            <button id="close-profile-btn" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">×</button>
+    <div class="toast" id="toast"></div>
+
+    <div id="auth-screen"
+        style="position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px;">
+        <div class="admin-panel" style="max-width:400px; width:100%; text-align:center; padding:40px 30px;">
+            <div class="logo-symbol"
+                style="width:50px; height:50px; margin:0 auto 16px; font-size:1.5rem; border-radius:12px;">∑</div>
+            <h2 style="font-family:'Syne',sans-serif; font-size:1.6rem; margin-bottom:24px;">МатемаТика Pro</h2>
+
+            <div
+                style="display:flex; gap:4px; margin-bottom:24px; background:var(--bg); border-radius:10px; padding:4px;">
+                <button id="tab-login"
+                    style="flex:1; padding:8px; border-radius:8px; border:none; background:white; font-weight:600; cursor:pointer;">Вхід</button>
+                <button id="tab-register"
+                    style="flex:1; padding:8px; border-radius:8px; border:none; background:transparent; cursor:pointer;">Реєстрація</button>
+            </div>
+
+            <div id="panel-login">
+                <div class="field" style="text-align:left;">
+                    <input type="email" id="auth-email" placeholder="Електронна пошта"
+                        style="padding:8px 12px; font-size:0.85rem;">
+                </div>
+                <div class="field" style="text-align:left; margin-bottom:14px;">
+                    <input type="password" id="auth-password" placeholder="Пароль"
+                        style="padding:8px 12px; font-size:0.85rem;">
+                </div>
+                <div id="forgot-section"
+                    style="display:none; margin-top:16px; border-top:1px solid var(--border); padding-top:16px;">
+                    <div class="field" style="text-align:left;">
+                        <input type="email" id="forgot-email" placeholder="Введіть ваш email"
+                            style="padding:8px 12px; font-size:0.85rem;">
+                    </div>
+                    <button class="btn-primary" style="width:100%; padding:10px;" id="send-reset-btn">📧 Надіслати
+                        лист</button>
+                    <div style="text-align:center; margin-top:8px;">
+                        <button id="hide-forgot-btn"
+                            style="background:none; border:none; color:var(--ink3); cursor:pointer; font-size:0.8rem;">←
+                            Назад до входу</button>
+                    </div>
+                </div>
+
+                <div style="text-align:center; margin-top:12px;">s
+                    <button id="forgot-password-btn"
+                        style="background:none; border:none; color:var(--accent); cursor:pointer; font-size:0.83rem; text-decoration:underline;">Забули
+                        пароль?</button>
+                </div>>
+            </div>
+
+            <div id="panel-register" style="display:none;">
+                <div class="field" style="text-align:left;">
+                    <input type="text" id="reg-name" placeholder="Ваше ім'я та прізвище"
+                        style="padding:8px 12px; font-size:0.85rem;">
+                </div>
+                <div class="field" style="text-align:left;">
+                    <input type="email" id="reg-email" placeholder="Електронна пошта"
+                        style="padding:8px 12px; font-size:0.85rem;">
+                </div>
+                <div class="field" style="text-align:left; margin-bottom:14px;">
+                    <input type="password" id="reg-password" placeholder="Пароль (мін. 6 символів)"
+                        style="padding:8px 12px; font-size:0.85rem;">
+                </div>
+                <button class="btn-primary" style="width:100%; padding:10px;" id="auth-register-btn">Зареєструватись
+                    →</button>
+            </div>
         </div>
-        <div id="profile-email" style="color:var(--ink3); font-size:0.85rem; margin-bottom:24px;"></div>
-        <div class="field"><label>Новий пароль</label><input type="password" id="new-password" placeholder="Мінімум 6 символів"/></div>
-        <button class="btn-primary" id="change-password-btn" style="width:100%; margin-bottom:16px;">🔑 Змінити пароль</button>
-        <hr style="border:none; border-top:1px solid var(--border); margin:16px 0;">
-        <button id="delete-account-btn" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ef4444; background:#fff; color:#ef4444; font-weight:600; cursor:pointer;">🗑 Видалити акаунт</button>
     </div>
-</div>
 
-<script type="module" src="/js/app.js"></script>
+    <div id="profile-modal"
+        style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9998; align-items:center; justify-content:center;">
+        <div class="admin-panel" style="max-width:400px; width:90%; padding:32px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+                <h3 style="font-family:'Syne',sans-serif; margin:0;">👤 Мій профіль</h3>
+                <button id="close-profile-btn"
+                    style="background:none; border:none; font-size:1.5rem; cursor:pointer;">×</button>
+            </div>
+            <div id="profile-email" style="color:var(--ink3); font-size:0.85rem; margin-bottom:24px;"></div>
+            <div class="field"><label>Новий пароль</label><input type="password" id="new-password"
+                    placeholder="Мінімум 6 символів" /></div>
+            <button class="btn-primary" id="change-password-btn" style="width:100%; margin-bottom:16px;">🔑 Змінити
+                пароль</button>
+            <hr style="border:none; border-top:1px solid var(--border); margin:16px 0;">
+            <button id="delete-account-btn"
+                style="width:100%; padding:10px; border-radius:8px; border:1px solid #ef4444; background:#fff; color:#ef4444; font-weight:600; cursor:pointer;">🗑
+                Видалити акаунт</button>
+        </div>
+    </div>
+
+    <script type="module" src="/js/app.js"></script>
 </body>
+
 </html>
