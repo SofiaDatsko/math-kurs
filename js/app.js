@@ -169,7 +169,7 @@ function handleForgotPassword() {
                 alert('Помилка: ' + err.message);
             }
         });
-} s
+} 
 
 function handleLogout() { auth.signOut().then(() => toast('Ви вийшли з системи')); }
 
