@@ -130,9 +130,21 @@ function handleGoogleLogin() {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     auth.signInWithPopup(provider).catch(err => {
-        alert('Помилка: ' + err.code + '\n' + err.message);
+        if (err.code === 'auth/popup-blocked') {
+            auth.signInWithRedirect(provider);
+        } else {
+            alert('Помилка: ' + err.code + '\n' + err.message);
+        }
     });
 }
+
+auth.getRedirectResult().then(result => {
+    // onAuthStateChanged сам підхопить користувача
+}).catch(err => {
+    if (err.code && err.code !== 'auth/no-current-user') {
+        console.error('Redirect error:', err);
+    }
+});
 
 function handleEmailLogin() {
     const email = document.getElementById('auth-email').value.trim();
