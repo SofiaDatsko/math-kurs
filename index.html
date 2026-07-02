@@ -66,10 +66,19 @@
             <div class="field" style="text-align:left; margin-bottom:14px;">
                 <input type="password" id="auth-password" placeholder="Пароль" style="padding:8px 12px; font-size:0.85rem;">
             </div>
-            <button class="btn-primary" style="width:100%; padding:10px;" id="auth-login-btn">Увійти →</button>
-            <div style="text-align:center; margin-top:12px;">
-                <button id="forgot-password-btn" style="background:none; border:none; color:var(--accent); cursor:pointer; font-size:0.83rem; text-decoration:underline;">Забули пароль?</button>
-            </div>
+            <div id="forgot-section" style="display:none; margin-top:16px; border-top:1px solid var(--border); padding-top:16px;">
+    <div class="field" style="text-align:left;">
+        <input type="email" id="forgot-email" placeholder="Введіть ваш email" style="padding:8px 12px; font-size:0.85rem;">
+    </div>
+    <button class="btn-primary" style="width:100%; padding:10px;" id="send-reset-btn">📧 Надіслати лист</button>
+    <div style="text-align:center; margin-top:8px;">
+        <button id="hide-forgot-btn" style="background:none; border:none; color:var(--ink3); cursor:pointer; font-size:0.8rem;">← Назад до входу</button>
+    </div>
+</div>
+
+<div style="text-align:center; margin-top:12px;">
+    <button id="forgot-password-btn" style="background:none; border:none; color:var(--accent); cursor:pointer; font-size:0.83rem; text-decoration:underline;">Забули пароль?</button>
+</div>>
         </div>
 
         <div id="panel-register" style="display:none;">
