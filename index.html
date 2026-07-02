@@ -82,6 +82,11 @@
                     <input type="password" id="auth-password" placeholder="Пароль"
                         style="padding:8px 12px; font-size:0.85rem;">
                 </div>
+
+                <button class="btn-primary" style="width:100%; padding:10px; margin-top: 10px;" id="auth-login-btn">
+                    Увійти →
+                </button>
+
                 <div id="forgot-section"
                     style="display:none; margin-top:16px; border-top:1px solid var(--border); padding-top:16px;">
                     <div class="field" style="text-align:left;">
@@ -102,25 +107,26 @@
                         style="background:none; border:none; color:var(--accent); cursor:pointer; font-size:0.83rem; text-decoration:underline;">Забули
                         пароль?</button>
                 </div>
-        </div>
+            </div>
 
-        <div id="panel-register" style="display:none;">
-            <div class="field" style="text-align:left;">
-                <input type="text" id="reg-name" placeholder="Ваше ім'я та прізвище"
-                    style="padding:8px 12px; font-size:0.85rem;">
+
+            <div id="panel-register" style="display:none;">
+                <div class="field" style="text-align:left;">
+                    <input type="text" id="reg-name" placeholder="Ваше ім'я та прізвище"
+                        style="padding:8px 12px; font-size:0.85rem;">
+                </div>
+                <div class="field" style="text-align:left;">
+                    <input type="email" id="reg-email" placeholder="Електронна пошта"
+                        style="padding:8px 12px; font-size:0.85rem;">
+                </div>
+                <div class="field" style="text-align:left; margin-bottom:14px;">
+                    <input type="password" id="reg-password" placeholder="Пароль (мін. 6 символів)"
+                        style="padding:8px 12px; font-size:0.85rem;">
+                </div>
+                <button class="btn-primary" style="width:100%; padding:10px;" id="auth-register-btn">Зареєструватись
+                    →</button>
             </div>
-            <div class="field" style="text-align:left;">
-                <input type="email" id="reg-email" placeholder="Електронна пошта"
-                    style="padding:8px 12px; font-size:0.85rem;">
-            </div>
-            <div class="field" style="text-align:left; margin-bottom:14px;">
-                <input type="password" id="reg-password" placeholder="Пароль (мін. 6 символів)"
-                    style="padding:8px 12px; font-size:0.85rem;">
-            </div>
-            <button class="btn-primary" style="width:100%; padding:10px;" id="auth-register-btn">Зареєструватись
-                →</button>
         </div>
-    </div>
     </div>
 
     <div id="profile-modal"
