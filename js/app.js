@@ -134,7 +134,8 @@ function handleRegister() {
     if (password.length < 6) return alert('Пароль мінімум 6 символів!');
     auth.createUserWithEmailAndPassword(email, password)
         .then(result => result.user.updateProfile({ displayName: name }))
-        .then(() => toast('✅ Реєстрація успішна!'))
+        .then(() => auth.currentUser.sendEmailVerification())
+        .then(() => toast('✅ Реєстрація успішна! Перевірте email для підтвердження.'))
         .catch(err => alert('Помилка реєстрації: ' + err.message));
 }
 
@@ -214,6 +215,43 @@ function toggleAdmin() {
     const isAdminOpen = document.getElementById('view-admin').classList.contains('active');
     if (isAdminOpen) { adminLayoutState = { section: 'courses', courseId: null, topicId: null }; goHome(); } 
     else { state.page = 'admin'; renderAdmin(); showView('view-admin'); updateBreadcrumb(); }
+}
+
+function openProfile() {
+    document.getElementById('profile-modal').style.display = 'flex';
+    document.getElementById('profile-email').textContent = '📧 ' + currentUser.email;
+}
+
+function closeProfile() {
+    document.getElementById('profile-modal').style.display = 'none';
+    document.getElementById('new-password').value = '';
+}
+
+function handleChangePassword() {
+    const newPass = document.getElementById('new-password').value;
+    if (newPass.length < 6) return alert('Пароль мінімум 6 символів!');
+    auth.currentUser.updatePassword(newPass)
+        .then(() => { toast('✅ Пароль змінено!'); closeProfile(); })
+        .catch(err => {
+            if (err.code === 'auth/requires-recent-login') {
+                alert('Для зміни пароля потрібно вийти і увійти знову.');
+            } else {
+                alert('Помилка: ' + err.message);
+            }
+        });
+}
+
+function handleDeleteAccount() {
+    if (!confirm('Видалити акаунт назавжди? Всі ваші дані буде втрачено.')) return;
+    auth.currentUser.delete()
+        .then(() => { toast('Акаунт видалено'); closeProfile(); })
+        .catch(err => {
+            if (err.code === 'auth/requires-recent-login') {
+                alert('Для видалення акаунта потрібно вийти і увійти знову.');
+            } else {
+                alert('Помилка: ' + err.message);
+            }
+        });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -666,6 +704,9 @@ function init() {
     document.getElementById('auth-login-btn').onclick = handleEmailLogin;
     document.getElementById('auth-register-btn').onclick = handleRegister;
     document.getElementById('auth-logout-btn').onclick = handleLogout;
+    document.getElementById('profile-btn').onclick = openProfile;
+    document.getElementById('change-password-btn').onclick = handleChangePassword;
+    document.getElementById('delete-account-btn').onclick = handleDeleteAccount;
     document.getElementById('tab-login').onclick = () => switchTab('login');
     document.getElementById('tab-register').onclick = () => switchTab('register');
 }
