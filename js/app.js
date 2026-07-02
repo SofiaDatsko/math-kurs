@@ -175,11 +175,19 @@ function handleLogout() { auth.signOut().then(() => toast('Ви вийшли з 
 
 function setupInterfaceForRole() {
     const adminBtn = document.getElementById('admin-toggle-btn');
+    const profileBtn = document.getElementById('profile-btn'); // Отримуємо кнопку профілю
+
     if (currentUser && currentUser.role === 'teacher') {
-        adminBtn.style.display = 'block';
+        // Налаштування для ВЧИТЕЛЯ:
+        if (adminBtn) adminBtn.style.display = 'block'; // показуємо Адмінку
+        if (profileBtn) profileBtn.style.display = 'none'; // ХОВАЄМО Профіль вчителя
+        
         adminBtn.onclick = toggleAdmin;
     } else {
-        adminBtn.style.display = 'none';
+        // Налаштування для УЧНЯ:
+        if (adminBtn) adminBtn.style.display = 'none'; // ховаємо Адмінку
+        if (profileBtn) profileBtn.style.display = 'block'; // ПОКАЗУЄМО Профіль учня
+        
         if (state.page === 'admin') goHome();
     }
     goHome();
