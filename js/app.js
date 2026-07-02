@@ -719,20 +719,26 @@ function collectQuestions(t) {
 }
 
 function init() {
-    document.getElementById('auth-login-btn').onclick = handleEmailLogin;
-    document.getElementById('forgot-password-btn').onclick = () => {
-        document.getElementById('forgot-section').style.display = 'block';
-    };
-    document.getElementById('hide-forgot-btn').onclick = () => {
-        document.getElementById('forgot-section').style.display = 'none';
-    };
-    document.getElementById('send-reset-btn').onclick = handleForgotPassword;
-    document.getElementById('auth-register-btn').onclick = handleRegister;
-    document.getElementById('auth-logout-btn').onclick = handleLogout;
-    document.getElementById('profile-btn').onclick = openProfile;
-    document.getElementById('change-password-btn').onclick = handleChangePassword;
-    document.getElementById('delete-account-btn').onclick = handleDeleteAccount;
-    document.getElementById('tab-login').onclick = () => switchTab('login');
-    document.getElementById('tab-register').onclick = () => switchTab('register');
+    // Безпечна перевірка наявності елементів у DOM перед ініціалізацією подій
+    if(document.getElementById('auth-login-btn')) document.getElementById('auth-login-btn').onclick = handleEmailLogin;
+    if(document.getElementById('forgot-password-btn')) {
+        document.getElementById('forgot-password-btn').onclick = () => {
+            document.getElementById('forgot-section').style.display = 'block';
+        };
+    }
+    if(document.getElementById('hide-forgot-btn')) {
+        document.getElementById('hide-forgot-btn').onclick = () => {
+            document.getElementById('forgot-section').style.display = 'none';
+        };
+    }
+    if(document.getElementById('send-reset-btn')) document.getElementById('send-reset-btn').onclick = handleForgotPassword;
+    if(document.getElementById('auth-register-btn')) document.getElementById('auth-register-btn').onclick = handleRegister;
+    if(document.getElementById('auth-logout-btn')) document.getElementById('auth-logout-btn').onclick = handleLogout;
+    if(document.getElementById('profile-btn')) document.getElementById('profile-btn').onclick = openProfile;
+    if(document.getElementById('change-password-btn')) document.getElementById('change-password-btn').onclick = handleChangePassword;
+    if(document.getElementById('delete-account-btn')) document.getElementById('delete-account-btn').onclick = handleDeleteAccount;
+    if(document.getElementById('tab-login')) document.getElementById('tab-login').onclick = () => switchTab('login');
+    if(document.getElementById('tab-register')) document.getElementById('tab-register').onclick = () => switchTab('register');
 }
+
 window.onload = init;
