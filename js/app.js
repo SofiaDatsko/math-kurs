@@ -121,7 +121,7 @@ function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&
 // БЛОК 2: АВТОРИЗАЦІЯ FIREBASE ТА РОУТИНГ
 // ═══════════════════════════════════════════════════════
 let currentUser = null;
-let db = loadDB();
+let db = { courses: [] }; // Створюємо порожню базу, яка заповниться з хмари
 let state = { page: 'home', courseId: null, topicId: null };
 let testState = { answers: {}, solutions: {}, submitted: false };
 let allowedCourses = {}; // Сюди підвантажуватимуться дозволені класи учня з Firestore
@@ -745,7 +745,14 @@ function renderAdminContent() {
         const qEditors = t.questions.map((q, qi) => buildQEditor(q, qi)).join(''); const matText = t.materials.map(m => `${m.title} | ${m.url}`).join('\n');
         el.innerHTML = `<div class="admin-panel"><div class="ap-title">Тема: ${esc(t.title)}</div><div class="form-row"><div class="field"><label>Назва теми</label><input id="at-title" value="${esc(t.title)}"/></div><div class="field"><label>Опис</label><input id="at-desc" value="${esc(t.desc)}"/></div></div><div class="field"><label>Презентація</label><input id="at-pres" value="${esc(t.presUrl)}"/></div><div class="field"><label>Матеріали</label><textarea id="at-materials" rows="4">${esc(matText)}</textarea></div><div class="field"><label>Питання</label><div id="qed-list">${qEditors}</div><button class="add-q-btn" id="as-add-q-btn">+ Додати питання</button></div><div class="form-actions" style="display:flex; gap:12px; align-items:center;"><button class="btn-primary" id="as-topic-save">💾 Зберегти тему</button><button id="as-topic-delete" style="padding:10px 18px; border-radius:8px; border:1px solid #ef4444; background:#fff; color:#ef4444; font-weight:600; cursor:pointer;">🗑 Видалити тему</button></div></div>`;
 
-        document.getElementById('as-add-q-btn').onclick = () => { collectQuestions(t); t.questions.push({ q: '', qImg: '', opts: ['', '', '', ''], correct: 0 }); saveDB(db); renderAdminContent(); };
+        document.getElementById('as-add-q-btn').onclick = () => {
+            collectQuestions(t);
+            t.questions.push({ q: '', qImg: '', opts: ['', '', '', ''], correct: 0 });
+
+            const course = findCourse(adminLayoutState.courseId);
+            saveCourseToCloud(course).then(() => renderAdminContent());
+        };
+        
         // Збереження теми
         document.getElementById('as-topic-save').onclick = () => {
             t.title = document.getElementById('at-title').value.trim();
