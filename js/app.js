@@ -525,10 +525,15 @@ function submitTest(cid, tid) {
     document.getElementById('test-result').innerHTML = `<div class="result-card ${pass ? 'pass' : 'fail'}"><div class="res-score">${pct}%</div>${!pass ? `<button class="retry-btn" id="retry-btn">🔄 Спробувати ще раз</button>` : ''}</div>`;
     if (!pass) document.getElementById('retry-btn').onclick = () => { testState = { answers: {}, solutions: {}, submitted: false }; renderTestBlock(cid, tid); };
 
+    // ЯК МАЄ БУТИ:
     if (pass && !t.passed) {
         t.passed = true; const idx = c.topics.findIndex(tp => tp.id === tid);
         if (idx >= 0 && idx + 1 < c.topics.length) c.topics[idx + 1].unlocked = true;
-        saveDB(db); renderSidebarBlock(t);
+
+        // Зберігаємо оновлений прогрес теми в хмару
+        saveCourseToCloud(c).then(() => {
+            renderSidebarBlock(t);
+        });
     }
 
     if (currentUser && currentUser.role === 'student') {
@@ -745,6 +750,7 @@ function renderAdminContent() {
         const qEditors = t.questions.map((q, qi) => buildQEditor(q, qi)).join(''); const matText = t.materials.map(m => `${m.title} | ${m.url}`).join('\n');
         el.innerHTML = `<div class="admin-panel"><div class="ap-title">Тема: ${esc(t.title)}</div><div class="form-row"><div class="field"><label>Назва теми</label><input id="at-title" value="${esc(t.title)}"/></div><div class="field"><label>Опис</label><input id="at-desc" value="${esc(t.desc)}"/></div></div><div class="field"><label>Презентація</label><input id="at-pres" value="${esc(t.presUrl)}"/></div><div class="field"><label>Матеріали</label><textarea id="at-materials" rows="4">${esc(matText)}</textarea></div><div class="field"><label>Питання</label><div id="qed-list">${qEditors}</div><button class="add-q-btn" id="as-add-q-btn">+ Додати питання</button></div><div class="form-actions" style="display:flex; gap:12px; align-items:center;"><button class="btn-primary" id="as-topic-save">💾 Зберегти тему</button><button id="as-topic-delete" style="padding:10px 18px; border-radius:8px; border:1px solid #ef4444; background:#fff; color:#ef4444; font-weight:600; cursor:pointer;">🗑 Видалити тему</button></div></div>`;
 
+        // ЯК МАЄ БУТИ:
         document.getElementById('as-add-q-btn').onclick = () => {
             collectQuestions(t);
             t.questions.push({ q: '', qImg: '', opts: ['', '', '', ''], correct: 0 });
@@ -752,7 +758,7 @@ function renderAdminContent() {
             const course = findCourse(adminLayoutState.courseId);
             saveCourseToCloud(course).then(() => renderAdminContent());
         };
-        
+
         // Збереження теми
         document.getElementById('as-topic-save').onclick = () => {
             t.title = document.getElementById('at-title').value.trim();
