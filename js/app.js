@@ -40,7 +40,12 @@ auth.onAuthStateChanged((user) => {
         document.getElementById('user-welcome-text').textContent = `Вітаємо, ${nameToShow}!`;
         document.getElementById('user-profile-block').style.display = 'flex';
         document.getElementById('auth-screen').style.display = 'none';
-        fetchAccessRights().then(() => { setupInterfaceForRole(); });
+
+        // Спочатку наповнюємо Firestore (якщо вперше), потім вантажимо курси, потім права доступу
+        seedFirestoreIfNeeded()
+            .then(() => loadDBFromCloud())
+            .then(() => fetchAccessRights())
+            .then(() => { setupInterfaceForRole(); });
     } else {
         currentUser = null;
         document.getElementById('user-profile-block').style.display = 'none';
@@ -68,27 +73,46 @@ const seed = {
     ]
 };
 
-function loadDB() {
-    try {
-        const s = localStorage.getItem(STORE_KEY);
-        let data = s ? JSON.parse(s) : JSON.parse(JSON.stringify(seed));
-        data.courses.forEach(c => {
-            c.topics.forEach(t => {
-                if (t.hw && !t.materials) {
-                    t.materials = t.hw.map(item => ({ title: item, url: '#' }));
-                    delete t.hw;
-                }
-                if (!t.materials) t.materials = [];
-                if (t.questions) {
-                    t.questions.forEach(q => { if (q.qImg === undefined) q.qImg = ''; });
-                }
+// Функція для первинного завантаження дефолтних курсів у хмару (якщо там ще нічого немає)
+function seedFirestoreIfNeeded() {
+    return db_cloud.collection("courses").get().then(snapshot => {
+        if (snapshot.empty) {
+            // Якщо в хмарі порожньо, завантажуємо туди ваш початковий масив seed
+            const promises = seed.courses.map(course => {
+                return db_cloud.collection("courses").doc(course.id).set(course);
             });
-        });
-        return data;
-    }
-    catch { return JSON.parse(JSON.stringify(seed)); }
+            return Promise.all(promises);
+        }
+    });
 }
-function saveDB(data) { localStorage.setItem(STORE_KEY, JSON.stringify(data)); }
+
+// Нова функція глобального завантаження даних із Firestore
+function loadDBFromCloud() {
+    return db_cloud.collection("courses").get().then(snapshot => {
+        let coursesArray = [];
+        snapshot.forEach(doc => {
+            coursesArray.push(doc.data());
+        });
+        // Сортуємо класи за зростанням (наприклад, за grade), щоб вони не мінялися місцями
+        coursesArray.sort((a, b) => a.grade - b.grade);
+
+        db = { courses: coursesArray };
+        return db;
+    }).catch(err => {
+        console.error("Помилка завантаження бази курсів:", err);
+        db = JSON.parse(JSON.stringify(seed)); // фолбек на випадок помилки
+    });
+}
+// Нова функція збереження окремого курсу (або теми всередині нього)
+function saveCourseToCloud(course) {
+    return db_cloud.collection("courses").doc(course.id).set(course)
+        .then(() => {
+            toast('✓ Дані синхронізовано з хмарою!');
+        })
+        .catch(err => alert("Помилка синхронізації: " + err.message));
+}
+
+
 function findCourse(id) { return db.courses.find(c => c.id === id); }
 function findTopic(cid, tid) { const c = findCourse(cid); return c ? c.topics.find(t => t.id === tid) : null; }
 function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -169,7 +193,7 @@ function handleForgotPassword() {
                 alert('Помилка: ' + err.message);
             }
         });
-} 
+}
 
 function handleLogout() { auth.signOut().then(() => toast('Ви вийшли з системи')); }
 
@@ -181,13 +205,13 @@ function setupInterfaceForRole() {
         // Налаштування для ВЧИТЕЛЯ:
         if (adminBtn) adminBtn.style.display = 'block'; // показуємо Адмінку
         if (profileBtn) profileBtn.style.display = 'none'; // ХОВАЄМО Профіль вчителя
-        
+
         adminBtn.onclick = toggleAdmin;
     } else {
         // Налаштування для УЧНЯ:
         if (adminBtn) adminBtn.style.display = 'none'; // ховаємо Адмінку
         if (profileBtn) profileBtn.style.display = 'block'; // ПОКАЗУЄМО Профіль учня
-        
+
         if (state.page === 'admin') goHome();
     }
     goHome();
@@ -560,9 +584,14 @@ function renderAdmin() {
         if (action === 'add-course') {
             const newId = 'c_' + Date.now();
             const newCourse = { id: newId, grade: 0, title: 'Новий курс', desc: '', color: 0, topics: [] };
-            db.courses.push(newCourse);
-            saveDB(db);
-            adminLayoutState = { section: 'course', courseId: newId, topicId: null };
+
+            // Одразу пишемо в Firestore
+            saveCourseToCloud(newCourse).then(() => {
+                return loadDBFromCloud();
+            }).then(() => {
+                adminLayoutState = { section: 'course', courseId: newId, topicId: null };
+                renderAdmin();
+            });
         }
 
         if (action === 'add-topic') {
@@ -571,8 +600,12 @@ function renderAdmin() {
                 const newTid = 't_' + Date.now();
                 const newTopic = { id: newTid, title: 'Нова тема', desc: '', presUrl: '', materials: [], questions: [], unlocked: true, passed: false };
                 course.topics.push(newTopic);
-                saveDB(db);
-                adminLayoutState = { section: 'topic', courseId: course.id, topicId: newTid };
+
+                // Зберігаємо оновлений курс із новою темою
+                saveCourseToCloud(course).then(() => {
+                    adminLayoutState = { section: 'topic', courseId: course.id, topicId: newTid };
+                    renderAdmin();
+                });
             }
         }
         renderAdmin();
@@ -682,15 +715,29 @@ function renderAdminContent() {
     if (adminLayoutState.section === 'course') {
         const c = findCourse(adminLayoutState.courseId); if (!c) return;
         el.innerHTML = `<div class="admin-panel"><div class="ap-title">Редагувати курс: ${esc(c.title)}</div><div class="form-row"><div class="field"><label>Назва курсу</label><input id="ac-title" value="${esc(c.title)}"/></div><div class="field"><label>Клас (число)</label><input id="ac-grade" type="number" value="${c.grade}"/></div></div><div class="field"><label>Опис</label><input id="ac-desc" value="${esc(c.desc)}"/></div><div class="field"><label>Колір (0–4)</label><select id="ac-color">${[0, 1, 2, 3, 4].map(i => `<option value="${i}" ${c.color === i ? 'selected' : ''}>Варіант ${i + 1}</option>`).join('')}</select></div><div class="form-actions" style="display:flex; gap:12px; align-items:center;"><button class="btn-primary" id="as-course-save">💾 Зберегти</button><button id="as-course-delete" style="padding:10px 18px; border-radius:8px; border:1px solid #ef4444; background:#fff; color:#ef4444; font-weight:600; cursor:pointer;">🗑 Видалити курс</button></div></div>`;
-        document.getElementById('as-course-save').onclick = () => { c.title = document.getElementById('ac-title').value.trim(); c.grade = parseInt(document.getElementById('ac-grade').value); c.desc = document.getElementById('ac-desc').value.trim(); c.color = parseInt(document.getElementById('ac-color').value); saveDB(db); toast('✓ Збережено!'); renderAdmin(); };
+        // Збереження курсу
+        document.getElementById('as-course-save').onclick = () => {
+            c.title = document.getElementById('ac-title').value.trim();
+            c.grade = parseInt(document.getElementById('ac-grade').value);
+            c.desc = document.getElementById('ac-desc').value.trim();
+            c.color = parseInt(document.getElementById('ac-color').value);
+
+            // Замість saveDB(db);
+            saveCourseToCloud(c).then(() => renderAdmin());
+        };
+        // Видалення курсу
         document.getElementById('as-course-delete').onclick = () => {
-            if (!confirm(`Видалити курс "${c.title}" разом з усіма темами? Цю дію неможливо скасувати.`)) return;
-            const idx = db.courses.findIndex(course => course.id === c.id);
-            if (idx >= 0) db.courses.splice(idx, 1);
-            saveDB(db);
-            toast('🗑 Курс видалено');
-            adminLayoutState = { section: 'progress', courseId: null, topicId: null };
-            renderAdmin();
+            if (!confirm(`Видалити курс "${c.title}"?`)) return;
+
+            db_cloud.collection("courses").doc(c.id).delete()
+                .then(() => {
+                    toast('🗑 Курс видалено з хмари');
+                    return loadDBFromCloud(); // Перезавантажуємо локальний масив db
+                })
+                .then(() => {
+                    adminLayoutState = { section: 'progress', courseId: null, topicId: null };
+                    renderAdmin();
+                });
         };
     }
     else if (adminLayoutState.section === 'topic') {
@@ -699,16 +746,34 @@ function renderAdminContent() {
         el.innerHTML = `<div class="admin-panel"><div class="ap-title">Тема: ${esc(t.title)}</div><div class="form-row"><div class="field"><label>Назва теми</label><input id="at-title" value="${esc(t.title)}"/></div><div class="field"><label>Опис</label><input id="at-desc" value="${esc(t.desc)}"/></div></div><div class="field"><label>Презентація</label><input id="at-pres" value="${esc(t.presUrl)}"/></div><div class="field"><label>Матеріали</label><textarea id="at-materials" rows="4">${esc(matText)}</textarea></div><div class="field"><label>Питання</label><div id="qed-list">${qEditors}</div><button class="add-q-btn" id="as-add-q-btn">+ Додати питання</button></div><div class="form-actions" style="display:flex; gap:12px; align-items:center;"><button class="btn-primary" id="as-topic-save">💾 Зберегти тему</button><button id="as-topic-delete" style="padding:10px 18px; border-radius:8px; border:1px solid #ef4444; background:#fff; color:#ef4444; font-weight:600; cursor:pointer;">🗑 Видалити тему</button></div></div>`;
 
         document.getElementById('as-add-q-btn').onclick = () => { collectQuestions(t); t.questions.push({ q: '', qImg: '', opts: ['', '', '', ''], correct: 0 }); saveDB(db); renderAdminContent(); };
-        document.getElementById('as-topic-save').onclick = () => { t.title = document.getElementById('at-title').value.trim(); t.desc = document.getElementById('at-desc').value.trim(); t.presUrl = document.getElementById('at-pres').value.trim(); const rawMat = document.getElementById('at-materials').value; t.materials = rawMat.split('\n').filter(l => l.trim()).map(line => { const parts = line.split('|'); return { title: parts[0].trim(), url: parts[1] ? parts[1].trim() : '#' }; }); collectQuestions(t); saveDB(db); toast('✓ Збережено!'); renderAdmin(); };
+        // Збереження теми
+        document.getElementById('as-topic-save').onclick = () => {
+            t.title = document.getElementById('at-title').value.trim();
+            t.desc = document.getElementById('at-desc').value.trim();
+            t.presUrl = document.getElementById('at-pres').value.trim();
+            const rawMat = document.getElementById('at-materials').value;
+            t.materials = rawMat.split('\n').filter(l => l.trim()).map(line => {
+                const parts = line.split('|');
+                return { title: parts[0].trim(), url: parts[1] ? parts[1].trim() : '#' };
+            });
+            collectQuestions(t);
+
+            // Шукаємо курс, якому належить тема, та зберігаємо його повністю
+            const course = findCourse(adminLayoutState.courseId);
+            saveCourseToCloud(course).then(() => renderAdmin());
+        };
+        // Видалення теми
         document.getElementById('as-topic-delete').onclick = () => {
-            if (!confirm(`Видалити тему "${t.title}"? Цю дію неможливо скасувати.`)) return;
+            if (!confirm(`Видалити тему "${t.title}"?`)) return;
             const course = findCourse(adminLayoutState.courseId);
             const idx = course.topics.findIndex(topic => topic.id === t.id);
             if (idx >= 0) course.topics.splice(idx, 1);
-            saveDB(db);
-            toast('🗑 Тему видалено');
-            adminLayoutState = { section: 'course', courseId: course.id, topicId: null };
-            renderAdmin();
+
+            saveCourseToCloud(course).then(() => {
+                toast('🗑 Тему видалено');
+                adminLayoutState = { section: 'course', courseId: course.id, topicId: null };
+                renderAdmin();
+            });
         };
     }
 }
@@ -728,31 +793,31 @@ function collectQuestions(t) {
 
 function init() {
     // Авторизація та відновлення пароля
-    if(document.getElementById('auth-login-btn')) document.getElementById('auth-login-btn').onclick = handleEmailLogin;
-    if(document.getElementById('auth-register-btn')) document.getElementById('auth-register-btn').onclick = handleRegister;
-    if(document.getElementById('auth-logout-btn')) document.getElementById('auth-logout-btn').onclick = handleLogout;
-    if(document.getElementById('send-reset-btn')) document.getElementById('send-reset-btn').onclick = handleForgotPassword;
-    
-    if(document.getElementById('forgot-password-btn')) {
+    if (document.getElementById('auth-login-btn')) document.getElementById('auth-login-btn').onclick = handleEmailLogin;
+    if (document.getElementById('auth-register-btn')) document.getElementById('auth-register-btn').onclick = handleRegister;
+    if (document.getElementById('auth-logout-btn')) document.getElementById('auth-logout-btn').onclick = handleLogout;
+    if (document.getElementById('send-reset-btn')) document.getElementById('send-reset-btn').onclick = handleForgotPassword;
+
+    if (document.getElementById('forgot-password-btn')) {
         document.getElementById('forgot-password-btn').onclick = () => {
             document.getElementById('forgot-section').style.display = 'block';
         };
     }
-    if(document.getElementById('hide-forgot-btn')) {
+    if (document.getElementById('hide-forgot-btn')) {
         document.getElementById('hide-forgot-btn').onclick = () => {
             document.getElementById('forgot-section').style.display = 'none';
         };
     }
 
     // Керування профілем (ВІДКРИТТЯ, ЗАКРИТТЯ та дії всередині)
-    if(document.getElementById('profile-btn')) document.getElementById('profile-btn').onclick = openProfile;
-    if(document.getElementById('close-profile-btn')) document.getElementById('close-profile-btn').onclick = closeProfile;
-    if(document.getElementById('change-password-btn')) document.getElementById('change-password-btn').onclick = handleChangePassword;
-    if(document.getElementById('delete-account-btn')) document.getElementById('delete-account-btn').onclick = handleDeleteAccount;
-    
+    if (document.getElementById('profile-btn')) document.getElementById('profile-btn').onclick = openProfile;
+    if (document.getElementById('close-profile-btn')) document.getElementById('close-profile-btn').onclick = closeProfile;
+    if (document.getElementById('change-password-btn')) document.getElementById('change-password-btn').onclick = handleChangePassword;
+    if (document.getElementById('delete-account-btn')) document.getElementById('delete-account-btn').onclick = handleDeleteAccount;
+
     // Перемикання табів входу/реєстрації
-    if(document.getElementById('tab-login')) document.getElementById('tab-login').onclick = () => switchTab('login');
-    if(document.getElementById('tab-register')) document.getElementById('tab-register').onclick = () => switchTab('register');
+    if (document.getElementById('tab-login')) document.getElementById('tab-login').onclick = () => switchTab('login');
+    if (document.getElementById('tab-register')) document.getElementById('tab-register').onclick = () => switchTab('register');
 }
 
 // Замість window.onload краще використовувати DOMContentLoaded для надійності:
