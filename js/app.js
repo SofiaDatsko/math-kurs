@@ -337,10 +337,15 @@ function renderHome() {
     const el = document.getElementById('home-inner');
     const CC = ['cc-c0', 'cc-c1', 'cc-c2', 'cc-c3', 'cc-c4'];
 
+    const isTeacher = currentUser && currentUser.role === 'teacher';
+    const subText = isTeacher
+        ? 'Перегляд усіх курсів та тем'
+        : 'Надішліть запит викладачу, щоб відкрити доступ до матеріалів класу';
+
     el.innerHTML = `
         <div style="padding:48px 40px 0">
             <div class="page-title">Мої курси</div>
-            <div class="page-sub">Надішліть запит викладачу, щоб відкрити доступ до матеріалів класу</div>
+            <div class="page-sub">${subText}</div>
         </div>
         <div style="padding:24px 40px 48px">
             <div class="courses-grid" id="courses-grid-container"></div>
