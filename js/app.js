@@ -143,6 +143,25 @@ function findCourse(id) { return db.courses.find(c => c.id === id); }
 function findTopic(cid, tid) { const c = findCourse(cid); return c ? c.topics.find(t => t.id === tid) : null; }
 function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
+// Перетворює звичайне посилання Google Drive (.../file/d/ID/view?...) на пряме
+// посилання, придатне для показу в <img>. Якщо це не Google Drive — повертає як є.
+function toDirectImageUrl(url) {
+    if (!url) return url;
+    const cleanUrl = url.trim();
+    const patterns = [
+        /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/,
+        /drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/,
+        /[?&]id=([a-zA-Z0-9_-]+)/
+    ];
+    for (const pattern of patterns) {
+        const match = cleanUrl.match(pattern);
+        if (match && match[1]) {
+            return `https://lh3.googleusercontent.com/d/${match[1]}`;
+        }
+    }
+    return cleanUrl;
+}
+
 // ═══════════════════════════════════════════════════════
 // БЛОК 2: АВТОРИЗАЦІЯ FIREBASE ТА РОУТИНГ
 // ═══════════════════════════════════════════════════════
@@ -502,7 +521,7 @@ function renderTestBlock(cid, tid) {
     if (!t.questions.length) { testContainer.innerHTML = '<p style="color:var(--ink3)">Тест ще не додано.</p>'; return; }
 
     const qs = t.questions.map((q, qi) => {
-        const imgHtml = q.qImg && q.qImg.trim() !== '' ? `<div style="margin: 12px 0;"><img src="${esc(q.qImg)}" style="max-width:100%; max-height:280px; border-radius:8px; border:1px solid var(--border); object-fit:contain;"></div>` : '';
+        const imgHtml = q.qImg && q.qImg.trim() !== '' ? `<div style="margin: 12px 0;"><img src="${esc(toDirectImageUrl(q.qImg))}" style="max-width:100%; max-height:280px; border-radius:8px; border:1px solid var(--border); object-fit:contain;" onerror="this.parentElement.innerHTML='<p style=&quot;color:#b91c1c;font-size:0.85rem&quot;>⚠ Не вдалося завантажити зображення. Перевірте посилання.</p>'"></div>` : '';
         return `
         <div class="q-block" id="qb-${qi}" style="border-bottom:1px solid var(--border); padding-bottom:20px; margin-bottom:20px;">
             <div class="q-text" style="font-weight:600;">${qi + 1}. ${esc(q.q)}</div>
@@ -769,7 +788,10 @@ function renderAdminContent() {
 }
 
 function buildQEditor(q, qi) {
-    return `<div class="q-editor-block" id="qed-${qi}" style="border:1px solid var(--border); padding:15px; border-radius:8px; margin-bottom:15px; background:#fff;"><div class="qe-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><span class="qe-num" style="font-weight:700;">Питання ${qi + 1}</span><button class="qe-del" id="qed-del-${qi}" style="background:none; border:none; color:red; cursor:pointer;">✕</button></div><input class="field" style="width:100%; margin-bottom:8px;" id="qt-${qi}" value="${esc(q.q)}" placeholder="Текст питання"/><input class="field" style="width:100%; margin-bottom:12px; font-size:0.85rem;" id="qi-${qi}" value="${esc(q.qImg || '')}" placeholder="URL-посилання на картинку"/><div class="opts-grid" style="display:grid; gap:8px;">${q.opts.map((o, oi) => `<div class="opt-row" style="display:flex; align-items:center; gap:8px;"><input type="radio" name="cr-${qi}" value="${oi}" ${q.correct === oi ? 'checked' : ''}><span class="opt-label" style="font-weight:600;">${LETTERS[oi]}</span><input type="text" class="field" style="flex:1;" id="qo-${qi}-${oi}" value="${esc(o)}"/></div>`).join('')}</div></div>`;
+    const imgPreview = q.qImg && q.qImg.trim() !== ''
+        ? `<div style="margin-bottom:12px;"><img id="qi-preview-${qi}" src="${esc(toDirectImageUrl(q.qImg))}" style="max-width:100%; max-height:180px; border-radius:8px; border:1px solid var(--border); object-fit:contain;" onerror="this.style.display='none'; document.getElementById('qi-error-${qi}').style.display='block';"><p id="qi-error-${qi}" style="display:none; color:#b91c1c; font-size:0.8rem; margin-top:4px;">⚠ Зображення не завантажується. Перевірте, що посилання Google Drive відкрите для всіх ("Будь-хто з посиланням").</p></div>`
+        : '';
+    return `<div class="q-editor-block" id="qed-${qi}" style="border:1px solid var(--border); padding:15px; border-radius:8px; margin-bottom:15px; background:#fff;"><div class="qe-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><span class="qe-num" style="font-weight:700;">Питання ${qi + 1}</span><button class="qe-del" id="qed-del-${qi}" style="background:none; border:none; color:red; cursor:pointer;">✕</button></div><input class="field" style="width:100%; margin-bottom:8px;" id="qt-${qi}" value="${esc(q.q)}" placeholder="Текст питання"/>${imgPreview}<input class="field" style="width:100%; margin-bottom:4px; font-size:0.85rem;" id="qi-${qi}" value="${esc(q.qImg || '')}" placeholder="URL-посилання на картинку (Google Drive або пряме посилання)"/><p style="font-size:0.75rem; color:var(--ink3); margin:0 0 12px;">Для Google Drive: відкрийте доступ "Будь-хто з посиланням" і вставте звичайне посилання — застосунок сам перетворить його у пряме.</p><div class="opts-grid" style="display:grid; gap:8px;">${q.opts.map((o, oi) => `<div class="opt-row" style="display:flex; align-items:center; gap:8px;"><input type="radio" name="cr-${qi}" value="${oi}" ${q.correct === oi ? 'checked' : ''}><span class="opt-label" style="font-weight:600;">${LETTERS[oi]}</span><input type="text" class="field" style="flex:1;" id="qo-${qi}-${oi}" value="${esc(o)}"/></div>`).join('')}</div></div>`;
 }
 
 function collectQuestions(t) {
