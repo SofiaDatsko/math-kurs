@@ -104,24 +104,27 @@ function normalizeDB(data) {
 // Прогрес учня — окрема колекція, по одному документу на учня
 // (щоб один учень не міг вплинути на прогрес іншого чи вчителя)
 // ─────────────────────────────────────────────────────────
-let studentProgress = {}; // { topicId: true, ... } — теми, які поточний учень пройшов
+let studentProgress = {}; // { topicId: true, ... } — теми з тестом, які учень склав (≥80%)
+let studentViewed = {};   // { topicId: true, ... } — теми БЕЗ тесту, які учень відкрив/переглянув
 
 function fetchStudentProgress() {
     if (!currentUser || currentUser.role === 'teacher') {
-        studentProgress = {};
+        studentProgress = {}; studentViewed = {};
         return Promise.resolve();
     }
     return db_cloud.collection('student_progress').doc(currentUser.uid).get()
         .then(docSnap => {
-            studentProgress = (docSnap.exists && docSnap.data().passedTopics) || {};
+            const data = docSnap.exists ? docSnap.data() : {};
+            studentProgress = data.passedTopics || {};
+            studentViewed = data.viewedTopics || {};
         })
         .catch(err => {
             console.error('Помилка завантаження прогресу учня:', err);
-            studentProgress = {};
+            studentProgress = {}; studentViewed = {};
         });
 }
 
-// Записує, що учень пройшов тему — пише лише у СВІЙ власний документ прогресу
+// Записує, що учень пройшов тему (склав тест) — пише лише у СВІЙ власний документ прогресу
 function saveTopicPassed(topicId) {
     if (!currentUser || currentUser.role !== 'student') return Promise.resolve();
     return db_cloud.collection('student_progress').doc(currentUser.uid)
@@ -132,11 +135,24 @@ function saveTopicPassed(topicId) {
         });
 }
 
-// Тема без жодного питання не має що "складати" — вважаємо її автоматично
-// пройденою, щоб вона не блокувала доступ до наступної теми назавжди.
+// Записує, що учень відкрив тему БЕЗ тесту — лише після фактичного відкриття,
+// а не автоматично від самого створення теми вчителем
+function saveTopicViewed(topicId) {
+    if (!currentUser || currentUser.role !== 'student') return Promise.resolve();
+    return db_cloud.collection('student_progress').doc(currentUser.uid)
+        .set({ viewedTopics: { [topicId]: true } }, { merge: true })
+        .catch(err => {
+            console.error('Помилка збереження прогресу:', err);
+            toast('❌ Не вдалося зберегти прогрес. Перевірте з’єднання.');
+        });
+}
+
+// Тема з тестом вважається пройденою лише після складання тесту (≥80%).
+// Тема БЕЗ тесту вважається пройденою лише після того, як учень її фактично
+// відкрив — а не одразу від моменту створення вчителем.
 function isTopicEffectivelyDone(topic) {
     if (!topic) return false;
-    if (!topic.questions || topic.questions.length === 0) return true;
+    if (!topic.questions || topic.questions.length === 0) return !!studentViewed[topic.id];
     return !!studentProgress[topic.id];
 }
 
@@ -182,6 +198,7 @@ function stopCoursesSync() {
     if (unsubscribeCourses) { unsubscribeCourses(); unsubscribeCourses = null; }
     db = { courses: [] };
     studentProgress = {};
+    studentViewed = {};
 }
 
 // Перерендерює той екран, що зараз відкритий у користувача — використовується
@@ -402,6 +419,19 @@ function goLesson(cid, tid) {
     if (currentUser.role === 'student' && allowedCourses[cid] !== 'approved') return goHome();
     state = { page: 'lesson', courseId: cid, topicId: tid };
     testState = { answers: {}, solutions: {}, submitted: false };
+
+    // Якщо в темі немає тесту — позначаємо її пройденою саме в момент відкриття,
+    // а не заздалегідь, щоб наступна тема розблоковувалась лише після реального
+    // перегляду уроку учнем
+    if (currentUser.role === 'student') {
+        const t = findTopic(cid, tid);
+        if (t && (!t.questions || t.questions.length === 0) && !studentViewed[tid]) {
+            studentViewed[tid] = true;
+            saveTopicViewed(tid);
+            applyProgressForRole();
+        }
+    }
+
     renderLesson(cid, tid);
     showView('view-lesson');
     updateBreadcrumb();
