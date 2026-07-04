@@ -80,7 +80,7 @@ function normalizeDB(data) {
     if (!data || !Array.isArray(data.courses)) { data.courses = []; return; }
     data.courses.forEach(c => {
         if (!Array.isArray(c.topics)) c.topics = [];
-        c.topics.forEach(t => {
+        c.topics.forEach((t, i) => {
             if (t.hw && !t.materials) {
                 t.materials = t.hw.map(item => ({ title: item, url: '#' }));
                 delete t.hw;
@@ -91,6 +91,11 @@ function normalizeDB(data) {
             } else {
                 t.questions = [];
             }
+            // Сувора послідовна логіка блокування: перша тема курсу завжди
+            // відкрита, кожна наступна відкривається лише після проходження
+            // попередньої. Це автоматично виправляє й уже збережені теми,
+            // які могли бути помилково створені як "відкриті".
+            t.unlocked = i === 0 ? true : !!c.topics[i - 1].passed;
         });
     });
 }
@@ -686,7 +691,8 @@ function renderAdmin() {
             const course = findCourse(id);
             if (course) {
                 const newTid = 't_' + Date.now();
-                const newTopic = { id: newTid, title: 'Нова тема', desc: '', presUrl: '', materials: [], questions: [], unlocked: true, passed: false };
+                const isFirstTopic = course.topics.length === 0;
+                const newTopic = { id: newTid, title: 'Нова тема', desc: '', presUrl: '', materials: [], questions: [], unlocked: isFirstTopic, passed: false };
                 course.topics.push(newTopic);
                 saveDB(db);
                 adminLayoutState = { section: 'topic', courseId: course.id, topicId: newTid };
