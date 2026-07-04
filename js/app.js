@@ -162,6 +162,43 @@ function toDirectImageUrl(url) {
     return cleanUrl;
 }
 
+// Розпізнає назву матеріалу для рядків, де вчитель вставив просто "голе" посилання
+// без назви через " | " — щоб учень бачив зрозумілий підпис, а не сирий URL
+function guessMaterialTitle(url, index) {
+    try {
+        const u = new URL(url);
+        const host = u.hostname.replace('www.', '');
+        if (host.includes('docs.google.com') && url.includes('/document/')) return `📄 Google Документ ${index}`;
+        if (host.includes('docs.google.com') && url.includes('/presentation/')) return `📊 Google Презентація ${index}`;
+        if (host.includes('docs.google.com') && url.includes('/spreadsheets/')) return `📈 Google Таблиця ${index}`;
+        if (host.includes('drive.google.com')) return `📁 Файл Google Диск ${index}`;
+        if (host.includes('youtube.com') || host.includes('youtu.be')) return `▶️ Відео ${index}`;
+        if (url.toLowerCase().endsWith('.pdf')) return `📕 PDF-файл ${index}`;
+        return `🔗 Посилання ${index}`;
+    } catch {
+        return `Матеріал ${index}`;
+    }
+}
+
+// Парсить текст із поля "Матеріали". Кожен рядок може бути у форматі
+// "Назва | посилання" АБО просто голим посиланням (тоді назва згенерується сама)
+function parseMaterialsInput(rawText) {
+    return rawText.split('\n').filter(l => l.trim()).map((line, i) => {
+        const trimmed = line.trim();
+        const sepIdx = trimmed.indexOf('|');
+        if (sepIdx !== -1) {
+            const title = trimmed.slice(0, sepIdx).trim();
+            const url = trimmed.slice(sepIdx + 1).trim();
+            return { title: title || guessMaterialTitle(url || '#', i + 1), url: url || '#' };
+        }
+        // Немає роздільника "|" — увесь рядок або посилання, або чиста назва
+        if (/^https?:\/\//i.test(trimmed)) {
+            return { title: guessMaterialTitle(trimmed, i + 1), url: trimmed };
+        }
+        return { title: trimmed, url: '#' };
+    });
+}
+
 // ═══════════════════════════════════════════════════════
 // БЛОК 2: АВТОРИЗАЦІЯ FIREBASE ТА РОУТИНГ
 // ═══════════════════════════════════════════════════════
@@ -770,10 +807,10 @@ function renderAdminContent() {
     else if (adminLayoutState.section === 'topic') {
         const t = findTopic(adminLayoutState.courseId, adminLayoutState.topicId); if (!t) return;
         const qEditors = t.questions.map((q, qi) => buildQEditor(q, qi)).join(''); const matText = t.materials.map(m => `${m.title} | ${m.url}`).join('\n');
-        el.innerHTML = `<div class="admin-panel"><div class="ap-title">Тема: ${esc(t.title)}</div><div class="form-row"><div class="field"><label>Назва теми</label><input id="at-title" value="${esc(t.title)}"/></div><div class="field"><label>Опис</label><input id="at-desc" value="${esc(t.desc)}"/></div></div><div class="field"><label>Презентація</label><input id="at-pres" value="${esc(t.presUrl)}"/></div><div class="field"><label>Матеріали</label><textarea id="at-materials" rows="4">${esc(matText)}</textarea></div><div class="field"><label>Питання</label><div id="qed-list">${qEditors}</div><button class="add-q-btn" id="as-add-q-btn">+ Додати питання</button></div><div class="form-actions" style="display:flex; gap:12px; align-items:center;"><button class="btn-primary" id="as-topic-save">💾 Зберегти тему</button><button id="as-topic-delete" style="padding:10px 18px; border-radius:8px; border:1px solid #ef4444; background:#fff; color:#ef4444; font-weight:600; cursor:pointer;">🗑 Видалити тему</button></div></div>`;
+        el.innerHTML = `<div class="admin-panel"><div class="ap-title">Тема: ${esc(t.title)}</div><div class="form-row"><div class="field"><label>Назва теми</label><input id="at-title" value="${esc(t.title)}"/></div><div class="field"><label>Опис</label><input id="at-desc" value="${esc(t.desc)}"/></div></div><div class="field"><label>Презентація</label><input id="at-pres" value="${esc(t.presUrl)}"/></div><div class="field"><label>Матеріали</label><textarea id="at-materials" rows="4">${esc(matText)}</textarea><p style="font-size:0.75rem; color:var(--ink3); margin:6px 0 0;">Кожен рядок — окремий матеріал. Формат: <b>Назва | посилання</b>. Якщо назву не вказати, а вставити просто посилання — застосунок сам підбере зрозумілий підпис (📄 документ, 📁 файл, ▶️ відео тощо).</p></div><div class="field"><label>Питання</label><div id="qed-list">${qEditors}</div><button class="add-q-btn" id="as-add-q-btn">+ Додати питання</button></div><div class="form-actions" style="display:flex; gap:12px; align-items:center;"><button class="btn-primary" id="as-topic-save">💾 Зберегти тему</button><button id="as-topic-delete" style="padding:10px 18px; border-radius:8px; border:1px solid #ef4444; background:#fff; color:#ef4444; font-weight:600; cursor:pointer;">🗑 Видалити тему</button></div></div>`;
 
         document.getElementById('as-add-q-btn').onclick = () => { collectQuestions(t); t.questions.push({ q: '', qImg: '', opts: ['', '', '', ''], correct: 0 }); saveDB(db); renderAdminContent(); };
-        document.getElementById('as-topic-save').onclick = () => { t.title = document.getElementById('at-title').value.trim(); t.desc = document.getElementById('at-desc').value.trim(); t.presUrl = document.getElementById('at-pres').value.trim(); const rawMat = document.getElementById('at-materials').value; t.materials = rawMat.split('\n').filter(l => l.trim()).map(line => { const parts = line.split('|'); return { title: parts[0].trim(), url: parts[1] ? parts[1].trim() : '#' }; }); collectQuestions(t); saveDB(db); toast('✓ Збережено!'); renderAdmin(); };
+        document.getElementById('as-topic-save').onclick = () => { t.title = document.getElementById('at-title').value.trim(); t.desc = document.getElementById('at-desc').value.trim(); t.presUrl = document.getElementById('at-pres').value.trim(); const rawMat = document.getElementById('at-materials').value; t.materials = parseMaterialsInput(rawMat); collectQuestions(t); saveDB(db); toast('✓ Збережено!'); renderAdmin(); };
         document.getElementById('as-topic-delete').onclick = () => {
             if (!confirm(`Видалити тему "${t.title}"? Цю дію неможливо скасувати.`)) return;
             const course = findCourse(adminLayoutState.courseId);
