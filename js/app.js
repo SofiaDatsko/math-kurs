@@ -40,10 +40,12 @@ auth.onAuthStateChanged((user) => {
         document.getElementById('user-welcome-text').textContent = `Вітаємо, ${nameToShow}!`;
         document.getElementById('user-profile-block').style.display = 'flex';
         document.getElementById('auth-screen').style.display = 'none';
-        fetchAccessRights().then(() => {
-            setupInterfaceForRole();
-            initCoursesSync(); // Підписуємось на живі дані курсів з хмари
-        });
+        fetchAccessRights()
+            .then(() => fetchStudentProgress())
+            .then(() => {
+                setupInterfaceForRole();
+                initCoursesSync(); // Підписуємось на живі дані курсів з хмари
+            });
     } else {
         stopCoursesSync(); // Відписуємось при виході
         currentUser = null;
@@ -75,7 +77,10 @@ const seed = {
     ]
 };
 
-// Приводить структуру даних до актуального вигляду (міграції старих полів)
+// Приводить структуру даних до актуального вигляду (міграції старих полів).
+// ВАЖЛИВО: поля unlocked/passed у цьому спільному документі — лише "шаблонні"
+// значення за замовчуванням. Реальний прогрес кожного учня зберігається окремо
+// (колекція student_progress) і накладається зверху через applyProgressForRole().
 function normalizeDB(data) {
     if (!data || !Array.isArray(data.courses)) { data.courses = []; return; }
     data.courses.forEach(c => {
@@ -91,11 +96,56 @@ function normalizeDB(data) {
             } else {
                 t.questions = [];
             }
-            // Сувора послідовна логіка блокування: перша тема курсу завжди
-            // відкрита, кожна наступна відкривається лише після проходження
-            // попередньої. Це автоматично виправляє й уже збережені теми,
-            // які могли бути помилково створені як "відкриті".
-            t.unlocked = i === 0 ? true : !!c.topics[i - 1].passed;
+        });
+    });
+}
+
+// ─────────────────────────────────────────────────────────
+// Прогрес учня — окрема колекція, по одному документу на учня
+// (щоб один учень не міг вплинути на прогрес іншого чи вчителя)
+// ─────────────────────────────────────────────────────────
+let studentProgress = {}; // { topicId: true, ... } — теми, які поточний учень пройшов
+
+function fetchStudentProgress() {
+    if (!currentUser || currentUser.role === 'teacher') {
+        studentProgress = {};
+        return Promise.resolve();
+    }
+    return db_cloud.collection('student_progress').doc(currentUser.uid).get()
+        .then(docSnap => {
+            studentProgress = (docSnap.exists && docSnap.data().passedTopics) || {};
+        })
+        .catch(err => {
+            console.error('Помилка завантаження прогресу учня:', err);
+            studentProgress = {};
+        });
+}
+
+// Записує, що учень пройшов тему — пише лише у СВІЙ власний документ прогресу
+function saveTopicPassed(topicId) {
+    if (!currentUser || currentUser.role !== 'student') return Promise.resolve();
+    return db_cloud.collection('student_progress').doc(currentUser.uid)
+        .set({ passedTopics: { [topicId]: true } }, { merge: true })
+        .catch(err => {
+            console.error('Помилка збереження прогресу:', err);
+            toast('❌ Не вдалося зберегти прогрес. Перевірте з’єднання.');
+        });
+}
+
+// Накладає прогрес поточного користувача на структуру курсів (в оперативній пам'яті,
+// нічого не пише в спільний документ). Для вчителя всі теми завжди "відкриті",
+// бо вчитель не проходить тести — йому потрібен повний огляд.
+function applyProgressForRole() {
+    if (!currentUser) return;
+    db.courses.forEach(c => {
+        c.topics.forEach((t, i) => {
+            if (currentUser.role === 'teacher') {
+                t.unlocked = true;
+                t.passed = false;
+            } else {
+                t.passed = !!studentProgress[t.id];
+                t.unlocked = i === 0 ? true : !!studentProgress[c.topics[i - 1].id];
+            }
         });
     });
 }
@@ -112,6 +162,7 @@ function initCoursesSync() {
             db = JSON.parse(JSON.stringify(seed));
             COURSES_DOC.set(db).catch(err => console.error('Помилка створення початкових даних:', err));
         }
+        applyProgressForRole();
         rerenderCurrentView();
     }, (err) => {
         console.error('Помилка синхронізації курсів:', err);
@@ -122,6 +173,7 @@ function initCoursesSync() {
 function stopCoursesSync() {
     if (unsubscribeCourses) { unsubscribeCourses(); unsubscribeCourses = null; }
     db = { courses: [] };
+    studentProgress = {};
 }
 
 // Перерендерює той екран, що зараз відкритий у користувача — використовується
@@ -624,9 +676,11 @@ function submitTest(cid, tid) {
     if (!pass) document.getElementById('retry-btn').onclick = () => { testState = { answers: {}, solutions: {}, submitted: false }; renderTestBlock(cid, tid); };
 
     if (pass && !t.passed) {
-        t.passed = true; const idx = c.topics.findIndex(tp => tp.id === tid);
+        t.passed = true; studentProgress[t.id] = true;
+        const idx = c.topics.findIndex(tp => tp.id === tid);
         if (idx >= 0 && idx + 1 < c.topics.length) c.topics[idx + 1].unlocked = true;
-        saveDB(db); renderSidebarBlock(t);
+        saveTopicPassed(t.id); // пишемо лише у власний документ прогресу учня
+        renderSidebarBlock(t);
     }
 
     if (currentUser && currentUser.role === 'student') {
