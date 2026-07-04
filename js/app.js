@@ -132,6 +132,14 @@ function saveTopicPassed(topicId) {
         });
 }
 
+// Тема без жодного питання не має що "складати" — вважаємо її автоматично
+// пройденою, щоб вона не блокувала доступ до наступної теми назавжди.
+function isTopicEffectivelyDone(topic) {
+    if (!topic) return false;
+    if (!topic.questions || topic.questions.length === 0) return true;
+    return !!studentProgress[topic.id];
+}
+
 // Накладає прогрес поточного користувача на структуру курсів (в оперативній пам'яті,
 // нічого не пише в спільний документ). Для вчителя всі теми завжди "відкриті",
 // бо вчитель не проходить тести — йому потрібен повний огляд.
@@ -143,8 +151,8 @@ function applyProgressForRole() {
                 t.unlocked = true;
                 t.passed = false;
             } else {
-                t.passed = !!studentProgress[t.id];
-                t.unlocked = i === 0 ? true : !!studentProgress[c.topics[i - 1].id];
+                t.passed = isTopicEffectivelyDone(t);
+                t.unlocked = i === 0 ? true : isTopicEffectivelyDone(c.topics[i - 1]);
             }
         });
     });
@@ -618,7 +626,7 @@ function renderLesson(cid, tid) {
 
 function renderTestBlock(cid, tid) {
     const t = findTopic(cid, tid); const testContainer = document.getElementById('test-container');
-    if (!t.questions.length) { testContainer.innerHTML = '<p style="color:var(--ink3)">Тест ще не додано.</p>'; return; }
+    if (!t.questions.length) { testContainer.innerHTML = '<p style="color:var(--ink3)">У цій темі немає тесту — вона вважається пройденою автоматично, і наступна тема вже відкрита. ✓</p>'; return; }
 
     const qs = t.questions.map((q, qi) => {
         const imgHtml = q.qImg && q.qImg.trim() !== '' ? `<div style="margin: 12px 0;"><img src="${esc(toDirectImageUrl(q.qImg))}" style="max-width:100%; max-height:280px; border-radius:8px; border:1px solid var(--border); object-fit:contain;" onerror="this.parentElement.innerHTML='<p style=&quot;color:#b91c1c;font-size:0.85rem&quot;>⚠ Не вдалося завантажити зображення. Перевірте посилання.</p>'"></div>` : '';
@@ -646,7 +654,13 @@ function renderTestBlock(cid, tid) {
 }
 
 function renderSidebarBlock(t) {
-    const sb = document.getElementById('lesson-sb'); const checks = [{ label: 'Переглянути презентацію', done: !!t.presUrl }, { label: 'Ознайомитись з мат.', done: t.materials.length > 0 }, { label: 'Пройти тест (≥80%)', done: t.passed }];
+    const sb = document.getElementById('lesson-sb');
+    const hasTest = t.questions && t.questions.length > 0;
+    const checks = [
+        { label: 'Переглянути презентацію', done: !!t.presUrl },
+        { label: 'Ознайомитись з мат.', done: t.materials.length > 0 },
+        hasTest ? { label: 'Пройти тест (≥80%)', done: t.passed } : { label: 'Тест не потрібен для цієї теми', done: true }
+    ];
     sb.innerHTML = `<div class="sb-card"><div class="sb-label">Прогрес уроку</div><div class="progress-donut-wrap"><div class="big-pct">${t.passed ? '100' : '0'}%</div></div></div><div class="sb-card"><div class="sb-label">Чеклист</div><ul class="checklist">${checks.map(c => `<li class="cl-item"><div class="cl-box ${c.done ? 'done' : 'todo'}">${c.done ? '✓' : '·'}</div><span>${c.label}</span></li>`).join('')}</ul></div>`;
 }
 
