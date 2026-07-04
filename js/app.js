@@ -514,7 +514,13 @@ function renderCourse(cid) {
 function renderLesson(cid, tid) {
     const t = findTopic(cid, tid); if (!t) return;
     const container = document.getElementById('lesson-inner');
-    const matItems = t.materials.map(m => `<li class="hw-item"><span class="hw-dot"></span><a href="${m.url !== '#' ? m.url : '#'}" target="_blank" style="text-decoration:none; color:inherit;">${esc(m.title)}</a></li>`).join('');
+    const matItems = t.materials.map(m => {
+        const hasLink = m.url && m.url !== '#';
+        if (hasLink) {
+            return `<li class="hw-item"><span class="hw-dot"></span><a href="${esc(m.url)}" target="_blank" rel="noopener" style="color:var(--accent); text-decoration:underline; text-underline-offset:2px; cursor:pointer;">🔗 ${esc(m.title)}</a></li>`;
+        }
+        return `<li class="hw-item"><span class="hw-dot"></span><span style="color:inherit;">${esc(m.title)}</span></li>`;
+    }).join('');
 
     let presContent = `<div class="pres-empty"><div class="pe-icon">📊</div><p>Презентацію ще не додано.</p></div>`;
     if (t.presUrl && t.presUrl.trim() !== '') {
