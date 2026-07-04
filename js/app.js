@@ -40,8 +40,12 @@ auth.onAuthStateChanged((user) => {
         document.getElementById('user-welcome-text').textContent = `Вітаємо, ${nameToShow}!`;
         document.getElementById('user-profile-block').style.display = 'flex';
         document.getElementById('auth-screen').style.display = 'none';
-        fetchAccessRights().then(() => { setupInterfaceForRole(); });
+        fetchAccessRights().then(() => {
+            setupInterfaceForRole();
+            initCoursesSync(); // Підписуємось на живі дані курсів з хмари
+        });
     } else {
+        stopCoursesSync(); // Відписуємось при виході
         currentUser = null;
         document.getElementById('user-profile-block').style.display = 'none';
         document.getElementById('auth-screen').style.display = 'flex';
@@ -49,9 +53,12 @@ auth.onAuthStateChanged((user) => {
 });
 
 // ═══════════════════════════════════════════════════════
-// БЛОК 1: ДАНІ ТА СХОВИЩЕ
+// БЛОК 1: ДАНІ ТА СХОВИЩЕ (ТЕПЕР У FIRESTORE, ЖИВА СИНХРОНІЗАЦІЯ)
 // ═══════════════════════════════════════════════════════
-const STORE_KEY = 'mathpro_v5';
+
+// Єдиний документ у Firestore, де зберігається вся структура курсів/тем/питань
+const COURSES_DOC = db_cloud.collection('app_state').doc('courses_data');
+let unsubscribeCourses = null;
 
 const seed = {
     courses: [
@@ -68,27 +75,70 @@ const seed = {
     ]
 };
 
-function loadDB() {
-    try {
-        const s = localStorage.getItem(STORE_KEY);
-        let data = s ? JSON.parse(s) : JSON.parse(JSON.stringify(seed));
-        data.courses.forEach(c => {
-            c.topics.forEach(t => {
-                if (t.hw && !t.materials) {
-                    t.materials = t.hw.map(item => ({ title: item, url: '#' }));
-                    delete t.hw;
-                }
-                if (!t.materials) t.materials = [];
-                if (t.questions) {
-                    t.questions.forEach(q => { if (q.qImg === undefined) q.qImg = ''; });
-                }
-            });
+// Приводить структуру даних до актуального вигляду (міграції старих полів)
+function normalizeDB(data) {
+    if (!data || !Array.isArray(data.courses)) { data.courses = []; return; }
+    data.courses.forEach(c => {
+        if (!Array.isArray(c.topics)) c.topics = [];
+        c.topics.forEach(t => {
+            if (t.hw && !t.materials) {
+                t.materials = t.hw.map(item => ({ title: item, url: '#' }));
+                delete t.hw;
+            }
+            if (!t.materials) t.materials = [];
+            if (t.questions) {
+                t.questions.forEach(q => { if (q.qImg === undefined) q.qImg = ''; });
+            } else {
+                t.questions = [];
+            }
         });
-        return data;
-    }
-    catch { return JSON.parse(JSON.stringify(seed)); }
+    });
 }
-function saveDB(data) { localStorage.setItem(STORE_KEY, JSON.stringify(data)); }
+
+// Підписка на живі оновлення курсів із Firestore (спрацьовує миттєво на всіх пристроях)
+function initCoursesSync() {
+    if (unsubscribeCourses) return; // вже підписані
+    unsubscribeCourses = COURSES_DOC.onSnapshot((docSnap) => {
+        if (docSnap.exists) {
+            db = docSnap.data();
+            normalizeDB(db);
+        } else {
+            // Документа ще немає в хмарі — створюємо його з початкових даних (seed)
+            db = JSON.parse(JSON.stringify(seed));
+            COURSES_DOC.set(db).catch(err => console.error('Помилка створення початкових даних:', err));
+        }
+        rerenderCurrentView();
+    }, (err) => {
+        console.error('Помилка синхронізації курсів:', err);
+        toast('❌ Помилка синхронізації курсів. Перевірте з’єднання.');
+    });
+}
+
+function stopCoursesSync() {
+    if (unsubscribeCourses) { unsubscribeCourses(); unsubscribeCourses = null; }
+    db = { courses: [] };
+}
+
+// Перерендерює той екран, що зараз відкритий у користувача — використовується
+// після кожного оновлення даних з хмари, щоб інтерфейс завжди був актуальним
+function rerenderCurrentView() {
+    if (!currentUser) return;
+    if (state.page === 'home') renderHome();
+    else if (state.page === 'course') { const c = findCourse(state.courseId); if (c) renderCourse(state.courseId); else goHome(); }
+    else if (state.page === 'lesson') { const t = findTopic(state.courseId, state.topicId); if (t) renderLesson(state.courseId, state.topicId); else goHome(); }
+    else if (state.page === 'admin') renderAdmin();
+    updateBreadcrumb();
+}
+
+// Збереження курсів тепер пише напряму в хмару Firestore (а не в localStorage),
+// тому зміни вчителя одразу з'являються на всіх пристроях (і в нього, і в учнів)
+function saveDB(data) {
+    return COURSES_DOC.set(data).catch(err => {
+        console.error('Помилка збереження даних:', err);
+        alert('Помилка збереження: ' + err.message);
+    });
+}
+
 function findCourse(id) { return db.courses.find(c => c.id === id); }
 function findTopic(cid, tid) { const c = findCourse(cid); return c ? c.topics.find(t => t.id === tid) : null; }
 function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -97,7 +147,7 @@ function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&
 // БЛОК 2: АВТОРИЗАЦІЯ FIREBASE ТА РОУТИНГ
 // ═══════════════════════════════════════════════════════
 let currentUser = null;
-let db = loadDB();
+let db = { courses: [] }; // Заповнюється через initCoursesSync() з Firestore після входу
 let state = { page: 'home', courseId: null, topicId: null };
 let testState = { answers: {}, solutions: {}, submitted: false };
 let allowedCourses = {}; // Сюди підвантажуватимуться дозволені класи учня з Firestore
