@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://math-kurs-alpha.vercel.app/sitemap.xml
